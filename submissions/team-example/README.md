@@ -9,7 +9,6 @@ This is a sample project submission for the Agora Conversational AI Hackathon. T
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/YOUR-GITHUB-USERNAME/conversational-ai-engine-hackathon-Feb2025.git
    cd conversational-ai-engine-hackathon-Feb2025/submissions/team-example
    ```
 
