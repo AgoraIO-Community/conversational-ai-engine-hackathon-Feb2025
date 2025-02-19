@@ -65,6 +65,6 @@ Projects will be evaluated based on:
 ---
 
 ## ❓ **Need Help?**  
-For any questions, reach out to **Hermes** ([hermes.frangoudis@agora.io](mailto:hermes.frangoudis@agora.io)) or message in the Hackathon Slack channel.  
+For any questions, reach out to [**Hermes**]() or message in the Hackathon Slack channel.  
 
 **Happy hacking and good luck!** 🚀  
