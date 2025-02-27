@@ -1,0 +1,3 @@
+pm2 delete convoai-ui
+npm run pm2-start
+
