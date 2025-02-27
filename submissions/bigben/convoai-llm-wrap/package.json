@@ -1,0 +1,25 @@
+{
+  "name": "llm-wrap",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3040",
+    "build": "next build",
+    "start": "next start -p 3040",
+    "pm2-start": "pm2 start npm --name \"wrap-ui\" -- start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "axios": "^1.8.1",
+    "next": "14.2.24",
+    "openai": "^4.85.4",
+    "react": "^18",
+    "react-dom": "^18"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "typescript": "^5"
+  }
+}
