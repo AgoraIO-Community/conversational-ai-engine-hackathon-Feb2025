@@ -33,6 +33,11 @@ This is a two-person Battleship game using the AgoraWebSDK for both RTC and sync
 - Agent for given player should only listen when it's their turn.
 - Press U on keyboard to open agent messages log.
 
+
+## Known Issues
+
+- Agents spam greeting message
+
 ## Demo
 
 Deployed here: https://alekben.github.io/BattleshipAgora/
