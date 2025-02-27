@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This is a sample project submission for the Agora Conversational AI Hackathon. The project aims to demonstrate the expected structure and content for hackathon submissions.
+This is a two-person Battleship game using the AgoraWebSDK for both RTC and sync/control purposes, with AI Agents that are limited to performing moves for the player by voice.
 
 ## Setup Instructions
 
