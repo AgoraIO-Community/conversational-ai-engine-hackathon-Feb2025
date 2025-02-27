@@ -106,7 +106,6 @@
             <div>
               <!-- Column headers (0-9) -->
               <div class="flex space-x-1 mb-2">
-                <div class="h-7 w-7 flex items-center justify-center font-bold">0</div>
                 <div class="h-7 w-7 flex items-center justify-center font-bold">1</div>
                 <div class="h-7 w-7 flex items-center justify-center font-bold">2</div>
                 <div class="h-7 w-7 flex items-center justify-center font-bold">3</div>
@@ -116,6 +115,7 @@
                 <div class="h-7 w-7 flex items-center justify-center font-bold">7</div>
                 <div class="h-7 w-7 flex items-center justify-center font-bold">8</div>
                 <div class="h-7 w-7 flex items-center justify-center font-bold">9</div>
+                <div class="h-7 w-7 flex items-center justify-center font-bold">10</div>
               </div>
               <div id="myBoard" class="grid grid-cols-10 gap-1" style="width: 300px; height: 300px;"></div>
             </div>
@@ -141,7 +141,6 @@
             <div>
               <!-- Column headers (0-9) -->
               <div class="flex space-x-1 mb-2">
-                <div class="h-7 w-7 flex items-center justify-center font-bold">0</div>
                 <div class="h-7 w-7 flex items-center justify-center font-bold">1</div>
                 <div class="h-7 w-7 flex items-center justify-center font-bold">2</div>
                 <div class="h-7 w-7 flex items-center justify-center font-bold">3</div>
@@ -151,6 +150,7 @@
                 <div class="h-7 w-7 flex items-center justify-center font-bold">7</div>
                 <div class="h-7 w-7 flex items-center justify-center font-bold">8</div>
                 <div class="h-7 w-7 flex items-center justify-center font-bold">9</div>
+                <div class="h-7 w-7 flex items-center justify-center font-bold">10</div>
               </div>
               <div id="enemyBoard" class="grid grid-cols-10 gap-1" style="width: 300px; height: 300px;"></div>
             </div>
@@ -718,9 +718,9 @@
         bothPlayersReady = true;
         //join respective agent
         if (isPlayerA) {
-            startAgent("AgentA", currentAgentChannelName, "AgentA", "PlayerA", "You are acting as a commentator for a game of Battleship. You are only to respond when you hear the word Fire followed by a letter and number, which are coordinates on the board. For example, I will say Fire B4 and you should then respond with Acknowledged firing on B4. The coordinates range from A-J and 0-9. You will also respond to Choose for me by responding with a letter A-J and a number 0-9. Do not respond to anything else.", "Welcome to Battleship Agora Player A! When it's your turn, Say Fire COORDINATES to attack, or Choose for me attack.");
+            startAgent("AgentA", currentAgentChannelName, "AgentA", "PlayerA", "You are acting as a commentator for a game of Battleship. You are only to respond when you hear the word Fire followed by a letter and number, which are coordinates on the board. For example, I will say Fire B4 and you should then respond with Acknowledged firing on B4. The coordinates range from A through J and 1 through 10. You will also respond to *Choose for me* by responding with a letter A through J and a number 1 through 10. Do not respond to anything else.", "Welcome to Battleship Agora Player A! When it's your turn, Say Fire COORDINATES to attack, or say Choose for me to attack.");
           } else {
-            startAgent("AgentB", currentAgentChannelName, "AgentB", "PlayerB", "You are acting as a commentator for a game of Battleship. You are only to respond when you hear the word Fire followed by a letter and number, which are coordinates on the board. For example, I will say Fire B4 and you should then respond with Acknowledged firing on B4. The coordinates range from A-J and 0-9. You will also respond to Choose for me by responding with a letter A-J and a number 0-9. Do not respond to anything else.", "Welcome to Battleship Agora Player B! When it's your turn, Say Fire COORDINATES to attack, or Choose for me attack.");
+            startAgent("AgentB", currentAgentChannelName, "AgentB", "PlayerB", "You are acting as a commentator for a game of Battleship. You are only to respond when you hear the word Fire followed by a letter and number, which are coordinates on the board. For example, I will say Fire B4 and you should then respond with Acknowledged firing on B4. The coordinates range from A through J and 1 through 10. You will also respond to *Choose for me* by responding with a letter A through J and a number 1 through 10. Do not respond to anything else.", "Welcome to Battleship Agora Player B! When it's your turn, Say Fire COORDINATES to attack, or say Choose for me to attack.");
           }
 
           // Set initial turn - Player A goes first
@@ -755,9 +755,9 @@
 
           //join respective agent
           if (isPlayerA) {
-            startAgent("AgentA", currentAgentChannelName, "AgentA", "PlayerA", "You are acting as a commentator for a game of Battleship. You are only to respond when you hear the word Fire followed by a letter and number, which are coordinates on the board. For example, I will say Fire B4 and you should then respond with Acknowledged firing on B4. Do not respond to anything else.", "Welcome to Battleship Agora Player A!");
+            startAgent("AgentA", currentAgentChannelName, "AgentA", "PlayerA", "You are acting as a commentator for a game of Battleship. You are only to respond when you hear the word Fire followed by a letter and number, which are coordinates on the board. For example, I will say Fire B4 and you should then respond with Acknowledged firing on B4. The coordinates range from A through J and 1 through 10. You will also respond to *Choose for me* by responding with a letter A through J and a number 1 through 10. Do not respond to anything else.", "Welcome to Battleship Agora Player A! When it's your turn, Say Fire COORDINATES to attack, or say Choose for me to attack.");
           } else {
-            startAgent("AgentB", currentAgentChannelName, "AgentB", "PlayerB", "You are acting as a commentator for a game of Battleship. You are only to respond when you hear the word Fire followed by a letter and number, which are coordinates on the board. For example, I will say Fire B4 and you should then respond with Acknowledged firing on B4. Do not respond to anything else.", "Welcome to Battleship Agora Player B!");
+            startAgent("AgentB", currentAgentChannelName, "AgentB", "PlayerB", "You are acting as a commentator for a game of Battleship. You are only to respond when you hear the word Fire followed by a letter and number, which are coordinates on the board. For example, I will say Fire B4 and you should then respond with Acknowledged firing on B4. The coordinates range from A through J and 1 through 10. You will also respond to *Choose for me* by responding with a letter A through J and a number 1 through 10. Do not respond to anything else.", "Welcome to Battleship Agora Player B! When it's your turn, Say Fire COORDINATES to attack, or say Choose for me to attack.");
           }
 
           // Set initial turn - Player A goes first
@@ -1114,6 +1114,7 @@
                 console.error("Error sending ready message:", err);
             });
           }
+          updateStatus("Waiting for opponent to finish placing ships...");
         } else {
           if (client) {
             const readyMsg = { type: "ready" };
@@ -1124,7 +1125,7 @@
           startGame();
         }
 
-        updateStatus("Waiting for opponent to finish placing ships...");
+        
       }
 
       // Add media event handlers
@@ -1394,7 +1395,7 @@
               if (match) {
                 const [_, letter, number] = match;
                 if (letter >= 'A' && letter <= 'J' && 
-                    parseInt(number) >= 0 && parseInt(number) <= 9) {
+                    parseInt(number) >= 1 && parseInt(number) <= 10) {
                     const letterNum = letter.charCodeAt(0) - 'A'.charCodeAt(0); // Convert A->0, B->1, etc
                     console.log("Valid coordinate:", letter + number);
                     attackCell(letterNum, parseInt(number) - 1); // Subtract 1 since board is 0-indexed
