@@ -1280,56 +1280,6 @@
         }
       }
 
-      async function listAgents() {
-        // listAgent deployed on Lambda
-        const url = "https://phsirhsgacbffkp62ylc2cqs5q0lpkut.lambda-url.us-east-2.on.aws/";
-        
-        const headers = {
-          "X-Requested-With": "XMLHttpRequest",
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        };
-
-        try {
-        const resp = await fetch(url, {
-          method: "GET",
-          headers
-        });
-        const data = await resp.json();
-        console.log("Agents:", data);
-        } catch (err) {
-          console.error("Error: " + err);
-        }
-      }
-
-      async function getAgent(name) {
-        // getAgent deployed on Lambda
-        const url = "https://7gfvwv57tp2lbgnqjlniaxnjka0wbdmt.lambda-url.us-east-2.on.aws/";
-        
-        const headers = {
-          "X-Requested-With": "XMLHttpRequest",
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        };
-
-        // Build request
-          const reqBody = {
-          agentname: name
-        };
-
-        try {
-        const resp = await fetch(url, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(reqBody)
-        });
-        const data = await resp.json();
-        console.log("Agent state:", data);
-        } catch (err) {
-          console.error("Error: " + err);
-        }
-      }
-
       // Add this new function to handle the message log
       function toggleMessageLog() {
         if (!bothPlayersReady) return;
