@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Two-Player Battleship (Agora)</title>
+    <!-- Tailwind CSS (latest) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Agora Web SDK from download.agora.io -->
+    <script src="https://download.agora.io/sdk/release/AgoraRTC_N.js"></script>
+  </head>
+
+  <body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col items-center">
+    <!-- Header/Title -->
+    <div class="mt-6 mb-2">
+      <h1 class="text-3xl font-bold">Two-Player Battleship</h1>
+    </div>
+
+    <!-- Buttons Row -->
+    <div class="flex space-x-4 mb-6">
+      <button
+        id="startBtn"
+        class="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 font-semibold"
+      >
+        Start (PlayerA)
+      </button>
+      <button
+        id="listChannelsBtn"
+        class="px-4 py-2 bg-green-600 rounded hover:bg-green-700 font-semibold"
+      >
+        List Channels to Join
+      </button>
+      <button
+        id="joinAudienceBtn"
+        class="px-4 py-2 bg-purple-600 rounded hover:bg-purple-700 font-semibold"
+      >
+        Join As Audience
+      </button>
+      <button
+        id="endBtn"
+        class="px-4 py-2 bg-red-600 rounded hover:bg-red-700 font-semibold opacity-50 cursor-not-allowed"
+        disabled
+      >
+        End
+      </button>
+    </div>
+
+    <!-- Game Instructions (Only visible for players) -->
+    <div id="gameInstructions" class="hidden mb-6 bg-gray-800 p-4 rounded-lg text-gray-200 space-y-2 max-w-2xl mx-auto">
+      <h3 class="font-bold text-lg mb-2">Game Instructions:</h3>
+      <ol class="list-decimal list-inside space-y-2">
+        <li>Place your ships after starting or joining a game</li>
+        <li>After the game starts, say "Fire COORDINATES" to perform a move (ex. "Fire B4"), or click a cell to attack</li>
+        <li>Say "Attack for me" for a random attack</li>
+      </ol>
+    </div>
+
+    <!-- Add this after the Buttons Row div and before the Channel List div -->
+    <div class="flex space-x-4 mb-6">
+      <button
+        id="rotateBtn"
+        class="hidden px-4 py-2 bg-purple-600 rounded hover:bg-purple-700 font-semibold"
+      >
+        Rotate Ship (R)
+      </button>
+    </div>
+
+    <!-- Channel List (UserB picks one) -->
+    <div
+      id="channelList"
+      class="hidden w-80 bg-gray-800 p-4 rounded shadow-lg mb-4"
+    >
+      <h2 class="text-xl font-bold mb-2">Channels Awaiting Opponent:</h2>
+      <ul id="channelsUl" class="space-y-2"></ul>
+    </div>
+
+    <!-- Add this before the Boards Container div -->
+    <div id="shipInfo" class="hidden w-full max-w-7xl px-4 mb-4 bg-gray-800 rounded p-4"></div>
+
+    <!-- Boards Container -->
+    <div class="flex justify-between w-full max-w-7xl px-4 mb-4 items-start space-x-4">
+      <!-- Local Video -->
+      <div class="w-48 flex-shrink-0">
+        <h3 class="text-center mb-2">Your Video</h3>
+        <div id="localVideo" class="bg-gray-800 rounded-lg aspect-video"></div>
+      </div>
+      
+      <!-- Game Boards -->
+      <div id="boardsContainer" class="hidden flex-1 flex flex-col md:flex-row md:space-x-6 space-y-6 md:space-y-0 justify-center">
+        <!-- Player's Board -->
+        <div class="flex flex-col items-center">
+          <h2 class="font-bold text-lg mb-2">Your Board</h2>
+          <div class="flex">
+            <!-- Row headers (A-J) -->
+            <div class="mt-8 mr-2 flex flex-col space-y-1">
+              <div class="h-7 w-7 flex items-center justify-center font-bold">A</div>
+              <div class="h-7 w-7 flex items-center justify-center font-bold">B</div>
+              <div class="h-7 w-7 flex items-center justify-center font-bold">C</div>
+              <div class="h-7 w-7 flex items-center justify-center font-bold">D</div>
+              <div class="h-7 w-7 flex items-center justify-center font-bold">E</div>
+              <div class="h-7 w-7 flex items-center justify-center font-bold">F</div>
+              <div class="h-7 w-7 flex items-center justify-center font-bold">G</div>
+              <div class="h-7 w-7 flex items-center justify-center font-bold">H</div>
+              <div class="h-7 w-7 flex items-center justify-center font-bold">I</div>
+              <div class="h-7 w-7 flex items-center justify-center font-bold">J</div>
+            </div>
+            <div>
+              <!-- Column headers (0-9) -->
+              <div class="flex space-x-1 mb-2">
+                <div class="h-7 w-7 flex items-center justify-center font-bold">1</div>
+                <div class="h-7 w-7 flex items-center justify-center font-bold">2</div>
+                <div class="h-7 w-7 flex items-center justify-center font-bold">3</div>
+                <div class="h-7 w-7 flex items-center justify-center font-bold">4</div>
+                <div class="h-7 w-7 flex items-center justify-center font-bold">5</div>
+                <div class="h-7 w-7 flex items-center justify-center font-bold">6</div>
+                <div class="h-7 w-7 flex items-center justify-center font-bold">7</div>
+                <div class="h-7 w-7 flex items-center justify-center font-bold">8</div>
+                <div class="h-7 w-7 flex items-center justify-center font-bold">9</div>
+                <div class="h-7 w-7 flex items-center justify-center font-bold">10</div>
+              </div>
+              <div id="myBoard" class="grid grid-cols-10 gap-1" style="width: 300px; height: 300px;"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Enemy Board -->
+        <div class="flex flex-col items-center">
+          <h2 class="font-bold text-lg mb-2">Enemy Board</h2>
+          <div class="flex">
+            <!-- Row headers (A-J) -->
+            <div class="mt-8 mr-2 flex flex-col space-y-1">
+              <div class="h-7 w-7 flex items-center justify-center font-bold">A</div>
+              <div class="h-7 w-7 flex items-center justify-center font-bold">B</div>
+              <div class="h-7 w-7 flex items-center justify-center font-bold">C</div>
+              <div class="h-7 w-7 flex items-center justify-center font-bold">D</div>
+              <div class="h-7 w-7 flex items-center justify-center font-bold">E</div>
+              <div class="h-7 w-7 flex items-center justify-center font-bold">F</div>
+              <div class="h-7 w-7 flex items-center justify-center font-bold">G</div>
+              <div class="h-7 w-7 flex items-center justify-center font-bold">H</div>
+              <div class="h-7 w-7 flex items-center justify-center font-bold">I</div>
+              <div class="h-7 w-7 flex items-center justify-center font-bold">J</div>
+            </div>
+            <div>
+              <!-- Column headers (0-9) -->
+              <div class="flex space-x-1 mb-2">
+                <div class="h-7 w-7 flex items-center justify-center font-bold">1</div>
+                <div class="h-7 w-7 flex items-center justify-center font-bold">2</div>
+                <div class="h-7 w-7 flex items-center justify-center font-bold">3</div>
+                <div class="h-7 w-7 flex items-center justify-center font-bold">4</div>
+                <div class="h-7 w-7 flex items-center justify-center font-bold">5</div>
+                <div class="h-7 w-7 flex items-center justify-center font-bold">6</div>
+                <div class="h-7 w-7 flex items-center justify-center font-bold">7</div>
+                <div class="h-7 w-7 flex items-center justify-center font-bold">8</div>
+                <div class="h-7 w-7 flex items-center justify-center font-bold">9</div>
+                <div class="h-7 w-7 flex items-center justify-center font-bold">10</div>
+              </div>
+              <div id="enemyBoard" class="grid grid-cols-10 gap-1" style="width: 300px; height: 300px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Remote Video -->
+      <div class="w-48 flex-shrink-0">
+        <h3 class="text-center mb-2">Opponent's Video</h3>
+        <div id="remoteVideo" class="bg-gray-800 rounded-lg aspect-video"></div>
+      </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div
+      id="statusBar"
+      class="mt-6 w-96 bg-gray-800 p-4 rounded shadow text-sm break-words"
+    >
+      <p>Status: <span id="statusText">Idle...</span></p>
+    </div>
+
+    <!-- Add this new element for notifications after the status bar -->
+    <div id="notification" class="hidden fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded shadow-lg">
+      <span id="notificationText"></span>
+    </div>
+
+    <!-- Add this new element for agent messages after the notification div -->
+    <div id="agentMessageLog" class="hidden fixed bottom-0 left-0 right-0 bg-gray-800 text-white p-4 h-48 overflow-y-auto border-t-2 border-gray-600">
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="font-bold">Agent Messages Log</h3>
+        <span class="text-sm text-gray-400">(Press 'U' to hide)</span>
+      </div>
+      <div id="agentMessages" class="space-y-1 text-sm"></div>
+    </div>
+
+    <script>
+      /*****************************************
+       * 1) Basic Config & REST Auth
+       *****************************************/
+      const AGORA_APP_ID = "a9a4b25e4e8b4a558aa39780d1a84342"; // Replace with your App ID
+
+      const LIST_CHANNELS_ENDPOINT = `https://malb3vrc6lk6qppe3ymsfv63cy0nsjvh.lambda-url.us-east-2.on.aws/`;
+
+      const LIST_CHANNELS_ENDPOINT_TWO_USERS = `https://c2pckxnc7eh7x3cxlgxq6cgihq0qsrqx.lambda-url.us-east-2.on.aws/`;
+
+      // Add these ship configuration constants first
+      const SHIPS = [
+        { name: "Destroyer", length: 2, count: 2 },
+        { name: "Cruiser", length: 3, count: 2 },
+        { name: "Submarine", length: 3, count: 2 },
+        { name: "Battleship", length: 4, count: 2 },
+        { name: "Carrier", length: 5, count: 2 }
+      ];
+
+      // Then use SHIPS in other variable declarations
+      const TOTAL_SHIP_CELLS = SHIPS.reduce((sum, ship) => sum + (ship.length * ship.count), 0);
+
+      // Agora variables
+      let client = null;
+      let agentClient = null;
+      let currentChannelName = null;
+      let currentAgentChannelName = null;
+      let isPlayerA = false;
+
+      // Boards: 0=empty, 1=hit, 2=miss
+      let myBoardState = Array(10).fill(null).map(() => Array(10).fill(0));
+      let enemyBoardState = Array(10).fill(null).map(() => Array(10).fill(0));
+
+      // Add these variables after the board states
+      let myShips = Array(10).fill(null).map(() => Array(10).fill(false));
+      let isMyTurn = false; // Track whose turn it is
+      let isPlacingShips = false; // Track if we're in ship placement phase
+      let shipPlacementStarted = false; //keep this false until playerA starts ship placement
+      let totalHits = 0; // Track total successful hits
+      let currentShipType = 0; // Index into SHIPS array
+      let currentShipOrientation = 'horizontal'; // or 'vertical'
+      let shipsToPlace = SHIPS.reduce((sum, ship) => sum + ship.count, 0); // Total ships to place
+
+      // Add these variables for media tracks
+      let localAudioTrack = null;
+      let localVideoTrack = null;
+      let remoteAudioTrack = null;
+      let remoteVideoTrack = null;
+
+      let agentAudioTrack = null;
+      let localAgentAudioTrack = null;
+      let myAgentsId = null;
+
+      // Add this variable with the other game state variables
+      let bothPlayersReady = false;
+      let otherPlayerReady = false;
+
+      // Add these variables after the other state variables
+      let isMessageLogVisible = false;
+      let agentMessages = [];
+
+      // DOM references
+
+      const startBtn         = document.getElementById("startBtn");
+      const listChannelsBtn  = document.getElementById("listChannelsBtn");
+      const joinAudienceBtn  = document.getElementById("joinAudienceBtn");
+      const endBtn           = document.getElementById("endBtn");
+      const channelListDiv   = document.getElementById("channelList");
+      const channelsUl       = document.getElementById("channelsUl");
+      const boardsContainer  = document.getElementById("boardsContainer");
+      const statusText       = document.getElementById("statusText");
+      const myBoardEl        = document.getElementById("myBoard");
+      const enemyBoardEl     = document.getElementById("enemyBoard");
+
+      //agent transcript business
+      let messageBuffer = [];
+      const messagesMap = new Map();
+
+      /*****************************************
+       * 2) Utility: Update Status
+       *****************************************/
+      function updateStatus(msg) {
+        statusText.textContent = msg;
+        console.log("[STATUS]", msg);
+      }
+
+      // Add this new function to update video outlines
+      function updateVideoOutlines() {
+        const localVideo = document.getElementById("localVideo");
+        const remoteVideo = document.getElementById("remoteVideo");
+        
+        if (isMyTurn) {
+          localVideo.style.outline = "5px solid #22c55e"; // green-500
+          remoteVideo.style.outline = "5px solid #ef4444"; // red-500
+        } else {
+          localVideo.style.outline = "5px solid #ef4444"; // red-500
+          remoteVideo.style.outline = "5px solid #22c55e"; // green-500
+        }
+      }
+
+      /*****************************************
+       * 3) START => Random Channel as PlayerA
+       *****************************************/
+      async function startAsPlayerA() {
+        try {
+          resetGameState();
+          // Disable Start List Channels button
+          listChannelsBtn.disabled = true;
+          listChannelsBtn.classList.add('opacity-50', 'cursor-not-allowed');
+          startBtn.disabled = true;
+          startBtn.classList.add('opacity-50', 'cursor-not-allowed');
+          endBtn.disabled = false;
+          endBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          // Show game instructions
+          document.getElementById('gameInstructions').classList.remove('hidden');
+          // Create and acquire media tracks first
+          [localAudioTrack, localVideoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+          localAgentAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+          
+          // Show local video
+          localVideoTrack.play("localVideo");
+
+          currentChannelName = "battleship_" + Math.floor(Math.random() * 999999);
+          currentAgentChannelName = currentChannelName + "_agent";
+          isPlayerA = true;
+
+          resetBoards();
+          boardsContainer.classList.remove("hidden");
+          channelListDiv.classList.add("hidden");
+          //startShipPlacement();
+
+          // Create client and set up event handlers
+          client = AgoraRTC.createClient({ mode: "live", codec: "vp8", role: "host" });
+          setupMediaHandlers();
+          client.on("stream-message", handleStreamMessage);
+
+          await client.join(AGORA_APP_ID, currentChannelName, null, "PlayerA");
+          
+          // Publish tracks after joining
+          await client.publish([localAudioTrack, localVideoTrack]);
+
+          agentClient = AgoraRTC.createClient({ mode: "live", codec: "vp8", role: "host" });
+          setupAgentAClientMediaHandlers();
+          agentClient.on("stream-message", handleAgentStreamMessage);
+          //listen for stream-message from agent later on here
+          await agentClient.join(AGORA_APP_ID, currentAgentChannelName, null, "PlayerA");
+          await agentClient.publish(localAgentAudioTrack);
+          localAgentAudioTrack.setVolume(100);
+
+          updateStatus(`Place your ships! (${shipsToPlace} remaining)`);
+        } catch (err) {
+          console.error(err);
+          updateStatus("Failed to start: " + err.message);
+        }
+      }
+
+      /*****************************************
+       * 4) LIST CHANNELS => For PlayerB
+       *****************************************/
+      async function listOneUserChannels() {
+        channelListDiv.classList.add("hidden");
+        channelsUl.innerHTML = "";
+
+        try {
+          // Basic Auth in the request
+          const resp = await fetch(LIST_CHANNELS_ENDPOINT, {
+            method: "GET",
+            headers: {
+              "X-Requested-With": "XMLHttpRequest",
+              "Accept": "application/json",
+              "Content-Type": "application/json"
+            }
+          });
+          if (!resp.ok) {
+            throw new Error("REST call failed: " + resp.statusText);
+          }
+          const data = await resp.json();
+          // Channels with user_count=1
+          const channels = data || [];
+          const oneUser = data.filter((ch) => ch.user_count === 1 && !ch.channel_name.endsWith('_agent'));
+          return oneUser;
+        } catch (err) {
+          console.error("Error listing channels:", err);
+          return [];
+        }
+      }
+
+      async function listTwoUserChannels() {
+        channelListDiv.classList.add("hidden");
+        channelsUl.innerHTML = "";
+
+        try {
+          // Basic Auth in the request
+          const resp = await fetch(LIST_CHANNELS_ENDPOINT_TWO_USERS, {
+            method: "GET",
+            headers: {
+              "X-Requested-With": "XMLHttpRequest",
+              "Accept": "application/json",
+              "Content-Type": "application/json"
+            }
+          });
+          if (!resp.ok) {
+            throw new Error("REST call failed: " + resp.statusText);
+          }
+          const data = await resp.json();
+          // Channels with user_count=1
+          const channels = data || [];
+          const oneUser = data.filter((ch) => ch.user_count === 2 && !ch.channel_name.endsWith('_agent'));
+          return oneUser;
+        } catch (err) {
+          console.error("Error listing channels:", err);
+          return [];
+        }
+      }
+
+      async function showChannelList() {
+        updateStatus("Fetching channels with ready players...");
+        const oneUserChannels = await listOneUserChannels();
+        if (!oneUserChannels.length) {
+          updateStatus("No channels with ready players found, start a new game.");
+          return;
+        }
+
+        channelListDiv.classList.remove("hidden");
+        channelsUl.innerHTML = "";
+        oneUserChannels.forEach((ch) => {
+          const li = document.createElement("li");
+          li.className = "bg-gray-700 hover:bg-gray-600 p-2 rounded cursor-pointer";
+          li.textContent = `${ch.channel_name}`;
+          li.onclick = () => joinAsPlayerB(ch.channel_name);
+          channelsUl.appendChild(li);
+        });
+      }
+
+      async function showAudienceChannelList() {
+        updateStatus("Fetching channels with ongoing games...");
+        const TwoUserChannels = await listTwoUserChannels();
+        if (!TwoUserChannels.length) {
+          updateStatus("No channels with ongoing games found, start a new game.");
+          return;
+        }
+
+        channelListDiv.classList.remove("hidden");
+        channelsUl.innerHTML = "";
+        TwoUserChannels.forEach((ch) => {
+          const li = document.createElement("li");
+          li.className = "bg-gray-700 hover:bg-gray-600 p-2 rounded cursor-pointer";
+          li.textContent = `${ch.channel_name}`;
+          li.onclick = () => joinAsAudience(ch.channel_name);
+          channelsUl.appendChild(li);
+        });
+      }
+
+      async function joinAsPlayerB(chName) {
+        try {
+          resetGameState();
+          listChannelsBtn.disabled = true;
+          listChannelsBtn.classList.add('opacity-50', 'cursor-not-allowed');
+          startBtn.disabled = true;
+          startBtn.classList.add('opacity-50', 'cursor-not-allowed');
+          endBtn.disabled = false;
+          endBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          // Show game instructions
+          document.getElementById('gameInstructions').classList.remove('hidden');
+          // Create and acquire media tracks first
+          [localAudioTrack, localVideoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+          localAgentAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+          
+          // Show local video
+          localVideoTrack.play("localVideo");
+
+          currentChannelName = chName;
+          currentAgentChannelName = currentChannelName + "_agent";
+          isPlayerA = false;
+
+          resetBoards();
+          boardsContainer.classList.remove("hidden");
+          channelListDiv.classList.add("hidden");
+          startShipPlacement();
+
+          client = AgoraRTC.createClient({ mode: "live", codec: "vp8", role: "host" });
+          setupMediaHandlers();
+          client.on("stream-message", handleStreamMessage);
+
+          await client.join(AGORA_APP_ID, chName, null, "PlayerB");
+          
+          // Publish tracks after joining
+          await client.publish([localAudioTrack, localVideoTrack]);
+
+          agentClient = AgoraRTC.createClient({ mode: "live", codec: "vp8", role: "host" });
+          setupAgentBClientMediaHandlers();
+          agentClient.on("stream-message", handleAgentStreamMessage);
+          //listen for stream-message from agent later on here
+          await agentClient.join(AGORA_APP_ID, currentAgentChannelName, null, "PlayerB");
+          await agentClient.publish(localAgentAudioTrack);
+          localAgentAudioTrack.setVolume(0);
+
+          updateStatus(`Place your ships! (${shipsToPlace} remaining)`);
+        } catch (err) {
+          console.error(err);
+          updateStatus("Error joining: " + err.message);
+        }
+      }
+
+      /*****************************************
+       * 5) END => Broadcast "end_session"
+       *****************************************/
+      function endSession() {
+        if (client) {
+          // New "sendStreamMessage" usage
+          client.sendStreamMessage("end_session").catch((err) => {
+            console.warn("sendStreamMessage error:", err);
+          });
+        }
+        leaveChannel();
+      }
+
+      async function leaveChannel() {
+        if (myAgentsId !== null) {
+          await stopAgent(myAgentsId);
+        };
+
+        // Reset message log
+        const messageLog = document.getElementById('agentMessageLog');
+        messageLog.classList.add('hidden');
+        document.getElementById('agentMessages').innerHTML = '';
+        isMessageLogVisible = false;
+        agentMessages = [];
+
+        // Hide game instructions
+        document.getElementById('gameInstructions').classList.add('hidden');
+
+        // Reset video outlines
+        const localVideo = document.getElementById("localVideo");
+        const remoteVideo = document.getElementById("remoteVideo");
+        localVideo.style.outline = "none";
+        remoteVideo.style.outline = "none";
+
+        if (client) {
+          try {
+            await client.leave();
+          } catch (err) {
+            console.warn("Error leaving channel:", err);
+          }
+        }
+
+        if (agentClient) {
+          try {
+            await agentClient.leave();
+          } catch (err) {
+            console.warn("Error leaving agent channel:", err);
+          }
+        }
+        
+        // Re-enable List Channels button
+        listChannelsBtn.disabled = false;
+        listChannelsBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        startBtn.disabled = false;
+        startBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        endBtn.disabled = true;
+        endBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        
+        // Clean up media tracks
+        if (localAudioTrack) {
+          localAudioTrack.close();
+          localAudioTrack = null;
+        }
+        if (localVideoTrack) {
+          localVideoTrack.close();
+          localVideoTrack = null;
+        }
+        if (remoteAudioTrack) {
+          remoteAudioTrack.stop();
+          remoteAudioTrack = null;
+        }
+        if (remoteVideoTrack) {
+          remoteVideoTrack.stop();
+          remoteVideoTrack = null;
+        }
+        if (agentAudioTrack) {
+          agentAudioTrack.stop();
+          agentAudioTrack = null;
+        }
+        if (localAgentAudioTrack) {
+          localAgentAudioTrack.close();
+          localAgentAudioTrack = null;
+        }
+        // Hide rotate button and ship info
+        document.getElementById('rotateBtn').classList.add('hidden');
+        document.getElementById('shipInfo').classList.add('hidden');
+        
+        client = null;
+        agentClient = null;
+        currentChannelName = null;
+        currentAgentChannelName = null;
+        isPlayerA = false;
+        myAgentsId = null;
+        shipPlacementStarted = false;
+        boardsContainer.classList.add("hidden");
+        channelListDiv.classList.add("hidden");
+        updateStatus("Idle...");
+      }
+
+      /*****************************************
+       * 6) Minimal Battleship - Boards & Attacks
+       *****************************************/
+      function resetBoards() {
+        myBoardState = Array(10).fill(null).map(() => Array(10).fill(0));
+        enemyBoardState = Array(10).fill(null).map(() => Array(10).fill(0));
+        
+        myBoardEl.innerHTML = "";
+        enemyBoardEl.innerHTML = "";
+
+        for (let r = 0; r < 10; r++) {
+          for (let c = 0; c < 10; c++) {
+            // My board cell
+            const myCell = document.createElement("div");
+            myCell.className = "h-7 w-7 border border-gray-600 bg-gray-700";
+            myBoardEl.appendChild(myCell);
+
+            // Enemy board cell
+            const enemyCell = document.createElement("div");
+            enemyCell.className = "h-7 w-7 bg-gray-700 border border-gray-600 cursor-pointer";
+            enemyCell.onclick = () => attackCell(r, c);
+            enemyBoardEl.appendChild(enemyCell);
+          }
+        }
+      }
+
+      // Add this new function for popup notifications
+      function showNotification(msg, duration = 2000) {
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notificationText');
+        notificationText.textContent = msg;
+        notification.classList.remove('hidden');
+        setTimeout(() => {
+          notification.classList.add('hidden');
+        }, duration);
+      }
+
+      // Update the attackCell function to check if both players are ready
+      function attackCell(row, col) {
+        if (!client) {
+          showNotification("Not connected to game!");
+          return;
+        }
+        
+        if (isPlacingShips) {
+          showNotification("Finish placing your ships first!");
+          return;
+        }
+
+        // Add this check for opponent's ship placement
+        if (!bothPlayersReady) {
+          showNotification("Waiting for opponent to finish placing ships!");
+          return;
+        }
+        
+        if (!isMyTurn) {
+          showNotification("Not your turn!");
+          return;
+        }
+
+        if (enemyBoardState[row][col] !== 0) {
+          showNotification("Cell already attacked!");
+          return;
+        }
+
+        const msgObj = { type: "attack", row, col };
+        const msgStr = JSON.stringify(msgObj);
+
+        // Switch turns immediately
+        isMyTurn = false;
+        localAgentAudioTrack.setVolume(0);
+        updateStatus("Waiting for opponent...");
+
+        client.sendStreamMessage(msgStr).catch((err) => {
+          console.warn("sendStreamMessage error:", err);
+          showNotification("Failed to send attack!");
+          // Restore turn if attack failed
+          isMyTurn = true;
+          localAgentAudioTrack.setVolume(100);
+          updateStatus("Your turn!");
+        });
+      }
+
+      // Update handleStreamMessage to handle ready messages
+      function handleStreamMessage(uid, msgData) {
+        const decoder = new TextDecoder();
+        const msgStr = decoder.decode(msgData);
+
+        try {
+          const msg = JSON.parse(msgStr);
+          console.log("Received message:", msg);
+          
+          if (!msg.type) {
+            console.warn("Received invalid message:", msg);
+            return;
+          }
+
+          switch (msg.type) {
+            case "attack":
+              handleAttack(msg);
+              break;
+            case "attack_result":
+              handleAttackResult(msg);
+              break;
+            case "ready":
+              handlePlayerReady();
+              break;
+            case "audience-joined":
+              handleAudienceJoined();
+              break;
+            default:
+              console.warn("Unknown message type:", msg.type);
+          }
+        } catch (e) {
+          if (msgStr === "end_session") {
+            updateStatus("Session ended by other player.");
+            leaveChannel();
+          } else {
+            console.error("Error parsing message:", e);
+          }
+        }
+      }
+
+      //start game by bringing in agents
+      function startGame() {
+        bothPlayersReady = true;
+        //join respective agent
+        if (isPlayerA) {
+            startAgent("AgentA", currentAgentChannelName, "AgentA", "PlayerA", "You are acting as a commentator for a game of Battleship. You are only to respond when you hear the word Fire followed by a letter and number, which are coordinates on the board. For example, I will say Fire B4 and you should then respond with Acknowledged firing on B4. The coordinates range from A through J and 1 through 10. You will also respond to *Choose for me* by responding with a letter A through J and a number 1 through 10. Do not respond to anything else.", "Welcome to Battleship Agora Player A! When it's your turn, Say Fire COORDINATES to attack, or say Choose for me to attack.");
+          } else {
+            startAgent("AgentB", currentAgentChannelName, "AgentB", "PlayerB", "You are acting as a commentator for a game of Battleship. You are only to respond when you hear the word Fire followed by a letter and number, which are coordinates on the board. For example, I will say Fire B4 and you should then respond with Acknowledged firing on B4. The coordinates range from A through J and 1 through 10. You will also respond to *Choose for me* by responding with a letter A through J and a number 1 through 10. Do not respond to anything else.", "Welcome to Battleship Agora Player B! When it's your turn, Say Fire COORDINATES to attack, or say Choose for me to attack.");
+          }
+
+          // Set initial turn - Player A goes first
+          isMyTurn = isPlayerA;
+          updateVideoOutlines();
+          updateStatus(isMyTurn ? "Your turn!" : "Waiting for opponent's move...");
+          showNotification("Both players ready - Game started!");
+        
+          console.log("Game started, new state:", {
+            bothPlayersReady,
+            otherPlayerReady,
+            isPlayerA,
+            isMyTurn,
+            isPlacingShips
+          });
+      }
+
+
+      // Update handlePlayerReady function
+      function handlePlayerReady() {
+        otherPlayerReady = true;
+        console.log("Player ready received, current state:", {
+            bothPlayersReady,
+            otherPlayerReady,
+            isPlayerA,
+            isMyTurn,
+            isPlacingShips
+        });
+
+        if (!isPlacingShips) {
+          bothPlayersReady = true;
+
+          //join respective agent
+          if (isPlayerA) {
+            startAgent("AgentA", currentAgentChannelName, "AgentA", "PlayerA", "You are acting as a commentator for a game of Battleship. You are only to respond when you hear the word Fire followed by a letter and number, which are coordinates on the board. For example, I will say Fire B4 and you should then respond with Acknowledged firing on B4. The coordinates range from A through J and 1 through 10. You will also respond to *Choose for me* by responding with a letter A through J and a number 1 through 10. Do not respond to anything else.", "Welcome to Battleship Agora Player A! When it's your turn, Say Fire COORDINATES to attack, or say Choose for me to attack.");
+          } else {
+            startAgent("AgentB", currentAgentChannelName, "AgentB", "PlayerB", "You are acting as a commentator for a game of Battleship. You are only to respond when you hear the word Fire followed by a letter and number, which are coordinates on the board. For example, I will say Fire B4 and you should then respond with Acknowledged firing on B4. The coordinates range from A through J and 1 through 10. You will also respond to *Choose for me* by responding with a letter A through J and a number 1 through 10. Do not respond to anything else.", "Welcome to Battleship Agora Player B! When it's your turn, Say Fire COORDINATES to attack, or say Choose for me to attack.");
+          }
+
+          // Set initial turn - Player A goes first
+          isMyTurn = isPlayerA;
+          updateVideoOutlines();
+          updateStatus(isMyTurn ? "Your turn!" : "Waiting for opponent's move...");
+          showNotification("Both players ready - Game started!");
+        
+          console.log("Game started, new state:", {
+            bothPlayersReady,
+            otherPlayerReady,
+            isPlayerA,
+            isMyTurn,
+            isPlacingShips
+          });
+        } else {
+          showNotification("Other player ready - finish placing ships!");
+        }
+      }
+
+      // Update handleAttack function
+      function handleAttack(msg) {
+        const isHit = myShips[msg.row][msg.col];
+        myBoardState[msg.row][msg.col] = isHit ? 1 : 2;
+        renderMyBoard();
+        
+        const resultMsg = {
+          type: "attack_result",
+          row: msg.row,
+          col: msg.col,
+          isHit,
+          isGameOver: false
+        };
+
+        // Check if all ships are destroyed
+        if (isHit) {
+          const totalHits = myBoardState.flat().filter(cell => cell === 1).length;
+          if (totalHits === TOTAL_SHIP_CELLS) {
+            resultMsg.isGameOver = true;
+            showGameOver(false); // I lost
+          }
+        }
+
+        client.sendStreamMessage(JSON.stringify(resultMsg));
+        
+        if (!resultMsg.isGameOver) {
+          isMyTurn = true; // It's my turn after I process their attack
+          localAgentAudioTrack.setVolume(100);
+          updateVideoOutlines();
+          updateStatus("Your turn!");
+          showNotification(`Enemy attacked [${msg.row}, ${msg.col}] => ${isHit ? "HIT!" : "MISS"}`);
+        }
+      }
+
+      // Update handleAttackResult function
+      function handleAttackResult(msg) {
+        enemyBoardState[msg.row][msg.col] = msg.isHit ? 1 : 2;
+        renderEnemyBoard();
+        
+        if (msg.isGameOver) {
+          showGameOver(true); // I won
+          return;
+        }
+
+        isMyTurn = false; // After receiving attack result, it's opponent's turn
+        localAgentAudioTrack.setVolume(0);
+        updateVideoOutlines();
+        showNotification(`Your attack at [${msg.row}, ${msg.col}] => ${msg.isHit ? "HIT!" : "MISS"}`);
+        updateStatus("Waiting for opponent...");
+      }
+
+      function renderEnemyBoard() {
+        const cells = enemyBoardEl.querySelectorAll("div");
+        let idx = 0;
+        for (let r = 0; r < 10; r++) {
+          for (let c = 0; c < 10; c++) {
+            const val = enemyBoardState[r][c];
+            cells[idx].className =
+              "h-7 w-7 border border-gray-600 cursor-pointer " +
+              (val === 0
+                ? "bg-gray-700"
+                : val === 1
+                ? "bg-red-500"
+                : "bg-blue-500");
+            idx++;
+          }
+        }
+      }
+
+      function renderMyBoard() {
+        const cells = myBoardEl.querySelectorAll("div");
+        let idx = 0;
+        for (let r = 0; r < 10; r++) {
+          for (let c = 0; c < 10; c++) {
+            const val = myBoardState[r][c];
+            const hasShip = myShips[r][c];
+            cells[idx].className =
+              "h-7 w-7 border border-gray-600 " +
+              (val === 0
+                ? (hasShip ? "bg-yellow-500" : "bg-gray-700")
+                : val === 1
+                ? "bg-red-500"
+                : "bg-blue-500");
+            idx++;
+          }
+        }
+      }
+
+      // Add rotation button to the UI after the boards container
+      function addRotationButton() {
+        const rotateBtn = document.createElement('button');
+        rotateBtn.id = 'rotateBtn';
+        rotateBtn.className = 'px-4 py-2 bg-purple-600 rounded hover:bg-purple-700 font-semibold mb-4';
+        rotateBtn.textContent = 'Rotate Ship (R)';
+        rotateBtn.onclick = rotateShip;
+        
+        // Insert before the boards container
+        const shipInfo = document.getElementById('shipInfo');
+        if (shipInfo) {
+          shipInfo.insertAdjacentElement('afterend', rotateBtn);
+        } else {
+          boardsContainer.parentElement.insertBefore(rotateBtn, boardsContainer);
+        }
+
+        // Add keyboard shortcut
+        document.addEventListener('keydown', (e) => {
+          if (e.key.toLowerCase() === 'r' && isPlacingShips) {
+            rotateShip();
+          }
+        });
+      }
+
+      function rotateShip() {
+        if (!isPlacingShips) return;
+        currentShipOrientation = currentShipOrientation === 'horizontal' ? 'vertical' : 'horizontal';
+        showNotification(`Rotated to ${currentShipOrientation}`);
+        
+        // Clear any existing preview
+        renderMyBoard();
+        
+        // Update preview if hovering over a cell
+        const hoveredCell = document.querySelector('.opacity-50');
+        if (hoveredCell) {
+          const idx = Array.from(myBoardEl.children).indexOf(hoveredCell);
+          const row = Math.floor(idx / 10);
+          const col = idx % 10;
+          showPlacementPreview(row, col, true);
+        }
+      }
+
+      // Add a ship info display
+      function addShipInfoDisplay() {
+        const infoDiv = document.createElement('div');
+        infoDiv.id = 'shipInfo';
+        infoDiv.className = 'mt-4 p-4 bg-gray-800 rounded text-sm w-full max-w-6xl mb-4';
+        boardsContainer.parentElement.insertBefore(infoDiv, boardsContainer);
+        updateShipInfo();
+      }
+
+      function updateShipInfo() {
+        const infoDiv = document.getElementById('shipInfo');
+        if (!infoDiv || !isPlacingShips) return;
+
+        let info = '<div class="font-bold mb-2">Ships to Place:</div>';
+        SHIPS.forEach((ship, index) => {
+          const isActive = index === currentShipType;
+          info += `<div class="${isActive ? 'text-yellow-400' : 'text-gray-400'}">
+            ${ship.name}: Length ${ship.length} (${ship.count} remaining)
+            ${isActive ? ' ← Currently placing' : ''}
+          </div>`;
+        });
+        infoDiv.innerHTML = info;
+      }
+
+      // Update the ship placement logic
+      function canPlaceShip(row, col) {
+        const ship = SHIPS[currentShipType];
+        if (!ship) return false;
+
+        for (let i = 0; i < ship.length; i++) {
+          const r = currentShipOrientation === 'horizontal' ? row : row + i;
+          const c = currentShipOrientation === 'horizontal' ? col + i : col;
+
+          if (r >= 10 || c >= 10) return false; // Out of bounds
+          if (myShips[r][c]) return false; // Overlapping with existing ship
+        }
+        return true;
+      }
+
+      function placeShip(row, col) {
+        if (!isPlacingShips || currentShipType >= SHIPS.length) return;
+        
+        if (!canPlaceShip(row, col)) {
+          showNotification("Can't place ship here!");
+          return;
+        }
+
+        const ship = SHIPS[currentShipType];
+        // Place the ship
+        for (let i = 0; i < ship.length; i++) {
+          const r = currentShipOrientation === 'horizontal' ? row : row + i;
+          const c = currentShipOrientation === 'horizontal' ? col + i : col;
+          myShips[r][c] = true;
+        }
+
+        SHIPS[currentShipType].count--;
+        if (SHIPS[currentShipType].count === 0) {
+          currentShipType++;
+        }
+        shipsToPlace--;
+        
+        renderMyBoard();
+        updateShipInfo(); // Update ship info display
+        updateStatus(getPlacementStatus());
+
+        if (shipsToPlace === 0) {
+          finishPlacement();
+        }
+      }
+
+      // Update the ship placement status display
+      function getPlacementStatus() {
+        if (shipsToPlace === 0) return isMyTurn ? "Your turn!" : "Waiting for opponent...";
+        const currentShip = SHIPS[currentShipType];
+        const remainingShips = SHIPS.slice(currentShipType)
+          .map(ship => `${ship.name} (${ship.count}x${ship.length})`)
+          .join(', ');
+        return `Place ${currentShip.name} (Length: ${currentShip.length}) - ${currentShip.count} remaining\nRemaining ships: ${remainingShips}`;
+      }
+
+      // Update startShipPlacement to include ship info
+      function startShipPlacement() {
+        isPlacingShips = true;
+        currentShipType = 0;
+        currentShipOrientation = 'horizontal';
+        myShips = Array(10).fill(null).map(() => Array(10).fill(false));
+        
+        // Show rotate button and ship info
+        const rotateBtn = document.getElementById('rotateBtn');
+        rotateBtn.classList.remove('hidden');
+        rotateBtn.onclick = rotateShip;
+        
+        // Add keyboard shortcut
+        document.addEventListener('keydown', handleRotateKeypress);
+        
+        updateShipInfo();
+        document.getElementById('shipInfo').classList.remove('hidden');
+        updateStatus(getPlacementStatus());
+        renderMyBoard();
+
+        const cells = myBoardEl.querySelectorAll("div");
+        let idx = 0;
+        for (let r = 0; r < 10; r++) {
+          for (let c = 0; c < 10; c++) {
+            const row = r, col = c;
+            const cell = cells[idx];
+            
+            cell.onclick = () => placeShip(row, col);
+            cell.onmouseover = () => showPlacementPreview(row, col, true);
+            cell.onmouseout = () => showPlacementPreview(row, col, false);
+            cell.className = `h-7 w-7 border border-gray-600 bg-gray-700 cursor-pointer`;
+            
+            idx++;
+          }
+        }
+      }
+
+      // Add this new function to handle keyboard rotation
+      function handleRotateKeypress(e) {
+        if (e.key.toLowerCase() === 'r' && isPlacingShips) {
+          rotateShip();
+        }
+      }
+
+      function showPlacementPreview(row, col, show) {
+        if (!isPlacingShips || currentShipType >= SHIPS.length) return;
+
+        const cells = myBoardEl.querySelectorAll("div");
+        const ship = SHIPS[currentShipType];
+        
+        for (let i = 0; i < ship.length; i++) {
+          const r = currentShipOrientation === 'horizontal' ? row : row + i;
+          const c = currentShipOrientation === 'horizontal' ? col + i : col;
+          
+          if (r < 10 && c < 10) {
+            const idx = r * 10 + c;
+            const cell = cells[idx];
+            
+            if (show) {
+              cell.className = `h-7 w-7 border border-gray-600 ${
+                canPlaceShip(row, col) ? 'bg-green-500' : 'bg-red-500'
+              } opacity-50`;
+            } else {
+              renderMyBoard(); // Restore original appearance
+            }
+          }
+        }
+      }
+
+      // Add this new function to handle game over
+      function showGameOver(isWinner) {
+        // Create game over overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
+        
+        const message = document.createElement('div');
+        message.className = `text-4xl font-bold ${isWinner ? 'text-green-500' : 'text-red-500'} bg-gray-800 p-8 rounded-lg shadow-lg`;
+        message.textContent = isWinner ? 'YOU WON!' : 'YOU LOST!';
+        
+        overlay.appendChild(message);
+        document.body.appendChild(overlay);
+
+        // Disable further moves
+        isMyTurn = false;
+        
+        // Add click to dismiss
+        overlay.onclick = () => {
+          overlay.remove();
+          endSession();
+        };
+
+        updateStatus(isWinner ? "Game Over - You Won!" : "Game Over - You Lost!");
+      }
+
+      // Update finishPlacement function
+      function finishPlacement() {
+        isPlacingShips = false;
+        
+        // Hide rotate button and remove keyboard listener
+        const rotateBtn = document.getElementById('rotateBtn');
+        rotateBtn.classList.add('hidden');
+        rotateBtn.onclick = null;
+        document.removeEventListener('keydown', handleRotateKeypress);
+        
+        // Hide ship info
+        const shipInfo = document.getElementById('shipInfo');
+        shipInfo.classList.add('hidden');
+
+        // Remove hover effects and click handlers from my board
+        const cells = myBoardEl.querySelectorAll("div");
+        cells.forEach(cell => {
+            cell.onclick = null;
+            cell.onmouseover = null;
+            cell.onmouseout = null;
+        });
+
+        console.log("Finishing placement, sending ready message");
+        
+        // Send ready message to other player only if they are not ready
+        if (!otherPlayerReady) {
+          if (client) {
+            const readyMsg = { type: "ready" };
+            client.sendStreamMessage(JSON.stringify(readyMsg)).catch(err => {
+                console.error("Error sending ready message:", err);
+            });
+          }
+          updateStatus("Waiting for opponent to finish placing ships...");
+        } else {
+          if (client) {
+            const readyMsg = { type: "ready" };
+            client.sendStreamMessage(JSON.stringify(readyMsg)).catch(err => {
+                console.error("Error sending ready message:", err);
+            });
+          }
+          startGame();
+        }
+
+        
+      }
+
+      // Add media event handlers
+      function setupMediaHandlers() {
+        client.on("user-published", async (user, mediaType) => {
+          if (isPlayerA && !shipPlacementStarted  ) {
+            startShipPlacement();
+            shipPlacementStarted = true;
+          }
+          await client.subscribe(user, mediaType);
+          
+          if (mediaType === "video") {
+            remoteVideoTrack = user.videoTrack;
+            remoteVideoTrack.play("remoteVideo");
+          } else if (mediaType === "audio") {
+            remoteAudioTrack = user.audioTrack;
+            remoteAudioTrack.play();
+          }
+        });
+
+        client.on("user-unpublished", (user, mediaType) => {
+          if (mediaType === "video") {
+            remoteVideoTrack = null;
+          } else if (mediaType === "audio") {
+            remoteAudioTrack = null;
+          }
+        });
+      }
+
+      function setupAgentAClientMediaHandlers() {
+        agentClient.on("user-published", async (user, mediaType) => {
+          const uid = user.uid;
+          if (uid === "AgentA") {
+            await agentClient.subscribe(user, mediaType);
+            agentAudioTrack = user.audioTrack;
+            agentAudioTrack.play();
+          }
+        });
+
+        agentClient.on("user-unpublished", (user, mediaType) => {
+          const uid = user.uid;
+          if (uid === "AgentA") {
+            agentAudioTrack = null;
+          }
+        });
+      }
+
+      function setupAgentBClientMediaHandlers() {
+        agentClient.on("user-published", async (user, mediaType) => {
+          const uid = user.uid;
+          if (uid === "AgentB") {
+            await agentClient.subscribe(user, mediaType);
+            agentAudioTrack = user.audioTrack;
+            agentAudioTrack.play();
+          }
+        });
+
+        agentClient.on("user-unpublished", (user, mediaType) => {
+          const uid = user.uid;
+          if (uid === "AgentB") {
+            agentAudioTrack = null;
+          }
+        });
+      }
+
+      // Update resetGameState function
+      function resetGameState() {
+        SHIPS.forEach(ship => ship.count = 2); // Reset ship counts
+        shipsToPlace = SHIPS.reduce((sum, ship) => sum + ship.count, 0);
+        currentShipType = 0;
+        currentShipOrientation = 'horizontal';
+        bothPlayersReady = false;
+        otherPlayerReady = false;
+        isPlacingShips = false;
+        isMyTurn = false; // Make sure this is false initially
+        totalHits = 0;
+      }
+
+      /*****************************************
+       * 8) Button Listeners
+       *****************************************/
+      startBtn.onclick = () => startAsPlayerA();
+      listChannelsBtn.onclick = () => showChannelList();
+      joinAudienceBtn.onclick = () => showAudienceChannelList();
+      endBtn.onclick = () => endSession();
+
+      /*****************************************
+       * * 9) Agent Stuff
+       *****************************************/
+      async function startAgent(name, chan, uid, remoteUid, prompt, message) {
+        // joinAgent deployed on Lambda
+        const url = "https://fcnfih4dgp6sysnjl4ywyazkze0gwvhg.lambda-url.us-east-2.on.aws";
+        
+        const headers = {
+          "X-Requested-With": "XMLHttpRequest",
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        };
+
+        // Build request
+        const reqBody = {
+          agentname: name,
+          channel: chan,
+          agentuid: uid,
+          remoteuid: remoteUid,
+          prompt: prompt,
+          message: message
+        };
+
+        try {
+        const resp = await fetch(url, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(reqBody)
+        });
+        const data = await resp.json();
+        if (data.agent_id) {
+          console.log("Agent started", data.agent_id);
+          myAgentsId = data.agent_id;
+        }
+        } catch (err) {
+          console.error("Error: " + err);
+        }
+      }
+
+      async function stopAgent(name) {
+        // stopAgent deployed on Lambda
+        const url = "https://wxukhqeinhumkgxdhfcsllvs5i0fmypy.lambda-url.us-east-2.on.aws/";
+        
+        const headers = {
+          "X-Requested-With": "XMLHttpRequest",
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        };
+
+        // Build request
+        const reqBody = {
+          agentname: name
+        };
+
+        try {
+        const resp = await fetch(url, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(reqBody)
+        });
+        if (resp.status === 200) {
+          console.log(`Agent ${name} stopped`);
+        }
+        } catch (err) {
+          console.error("Error: " + err);
+        }
+      }
+
+      // Add this new function to handle the message log
+      function toggleMessageLog() {
+        if (!bothPlayersReady) return;
+        
+        const messageLog = document.getElementById('agentMessageLog');
+        isMessageLogVisible = !isMessageLogVisible;
+        messageLog.classList.toggle('hidden');
+      }
+
+      // Add this function to update the message log
+      function updateMessageLog(message) {
+        if (!bothPlayersReady) return;
+        
+        const messagesDiv = document.getElementById('agentMessages');
+        const messageElement = document.createElement('div');
+        messageElement.className = 'text-gray-300';
+        messageElement.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+        messagesDiv.appendChild(messageElement);
+        
+        // Keep only last 50 messages
+        agentMessages.push(message);
+        if (agentMessages.length > 50) {
+          agentMessages.shift();
+          if (messagesDiv.firstChild) {
+            messagesDiv.removeChild(messagesDiv.firstChild);
+          }
+        }
+        
+        // Auto-scroll to bottom
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+
+      // Add keyboard event listener for 'U' key
+      document.addEventListener('keydown', (e) => {
+        if (e.key.toLowerCase() === 'u') {
+          toggleMessageLog();
+        }
+      });
+
+      // Update handleAgentStreamMessage to log messages
+      function handleAgentStreamMessage(uid, msgData) {
+        // Only handle messages from your own agent
+        if (uid === (isPlayerA ? "AgentA" : "AgentB")) {
+          try {
+            let [messageId, messagePart, messageChunks, messageData] = new TextDecoder().decode(msgData).split("|");
+            messageData = atob(messageData);
+            messagesMap.set(messageId, messagesMap.get(messageId) ? messagesMap.get(messageId) + messageData : messageData);
+
+            messageData = messagesMap.get(messageId);
+            if (parseInt(messagePart) === parseInt(messageChunks))
+              messagesMap.delete(messageId);
+            else return;
+            // messageData example: {"is_final": false, "stream_id": 1000000016, "user_id": "1000000016", "turn_id": 1, "message_id": "20477583", "data_type": "transcribe", "text": "fire ", "text_ts": 1740669070630}
+            const messageDataJson = JSON.parse(messageData);
+            if (!messageDataJson?.is_final) return;
+
+            if (messageDataJson.user_id === "") {
+              //this is user transcript
+              console.log("Agent message:", messageDataJson.text);
+              
+              // Search for capital letter followed by number pattern
+              const match = messageDataJson.text.match(/([A-Z])(\d)(?!\d)/);
+              if (match) {
+                const [_, letter, number] = match;
+                if (letter >= 'A' && letter <= 'J' && 
+                    parseInt(number) >= 1 && parseInt(number) <= 10) {
+                    const letterNum = letter.charCodeAt(0) - 'A'.charCodeAt(0); // Convert A->0, B->1, etc
+                    console.log("Valid coordinate:", letter + number);
+                    attackCell(letterNum, parseInt(number) - 1); // Subtract 1 since board is 0-indexed
+                    showNotification(`${isPlayerA ? "Player A" : "Player B"} attacked [${letter}, ${number}]`);
+                }
+              } else {
+                console.log("Invalid coordinate:", messageDataJson.text);
+              }
+              
+              updateMessageLog(`${isPlayerA ? "Agent A" : "Agent B"}: ${messageDataJson.text}`);
+              
+            } else {
+              //this is agent transcript
+              console.log("Player message:", messageDataJson.text);
+              updateMessageLog(`${isPlayerA ? "Player A" : "Player B"}: ${messageDataJson.text}`);
+            }
+
+            } catch (error) {
+              console.log("Error processing Agent message:", error);
+            }
+          }
+        };
+
+      async function joinAsAudience(chName) {
+        try {
+          resetGameState();
+          listChannelsBtn.disabled = true;
+          listChannelsBtn.classList.add('opacity-50', 'cursor-not-allowed');
+          joinAudienceBtn.disabled = true;
+          joinAudienceBtn.classList.add('opacity-50', 'cursor-not-allowed');
+          startBtn.disabled = true;
+          startBtn.classList.add('opacity-50', 'cursor-not-allowed');
+          endBtn.disabled = false;
+          endBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          // Hide game instructions for audience
+          document.getElementById('gameInstructions').classList.add('hidden');
+
+          // Create and acquire media tracks for viewing only
+          currentChannelName = chName;
+          isPlayerA = false;
+
+          resetBoards();
+          boardsContainer.classList.remove("hidden");
+          channelListDiv.classList.add("hidden");
+
+          // Create client as audience
+          client = AgoraRTC.createClient({ mode: "live", codec: "vp8", role: "audience" });
+          
+          // Set up special handlers for audience mode
+          setupAudienceMediaHandlers();
+          client.on("stream-message", handleAudienceStreamMessage);
+          // Generate random 10 character alphanumeric string for audience ID
+          const generateAudienceId = () => {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = 'Audience_';
+            for (let i = 0; i < 10; i++) {
+              result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+          };
+
+          const audienceId = generateAudienceId();
+
+          await client.join(AGORA_APP_ID, chName, null, audienceId);
+          
+          // Send audience joined message
+          const msgObj = { type: "audience-joined" };
+          client.sendStreamMessage(JSON.stringify(msgObj)).catch((err) => {
+            console.warn("Error sending audience joined message:", err);
+          });
+
+          updateStatus("Joined as audience - waiting for game state...");
+        } catch (err) {
+          console.error(err);
+          updateStatus("Error joining as audience: " + err.message);
+        }
+      }
+
+      function setupAudienceMediaHandlers() {
+        client.on("user-published", async (user, mediaType) => {
+          await client.subscribe(user, mediaType);
+          
+          if (mediaType === "video") {
+            // Create video container if it doesn't exist
+            const containerA = document.querySelector("#myBoard").parentElement.parentElement;
+            const containerB = document.querySelector("#enemyBoard").parentElement.parentElement;
+            
+            let videoContainer;
+            if (user.uid === "PlayerA") {
+              videoContainer = containerA.querySelector(".remote-video") || 
+                             createVideoContainer(containerA, "PlayerA");
+            } else if (user.uid === "PlayerB") {
+              videoContainer = containerB.querySelector(".remote-video") || 
+                             createVideoContainer(containerB, "PlayerB");
+            }
+            
+            if (videoContainer) {
+              user.videoTrack.play(videoContainer);
+            }
+          } else if (mediaType === "audio") {
+            user.audioTrack.play();
+          }
+        });
+      }
+
+      function createVideoContainer(parentContainer, playerId) {
+        const videoDiv = document.createElement("div");
+        videoDiv.className = "remote-video w-48 h-36 bg-gray-800 rounded mt-4";
+        videoDiv.id = `remote-video-${playerId}`;
+        parentContainer.appendChild(videoDiv);
+        return videoDiv;
+      }
+
+      function handleAudienceJoined() {
+        // Send current board state to audience
+        if (client) {
+          const boardState = {
+            type: "board-state",
+            isPlayerA: isPlayerA,
+            board: myBoardState,
+            ships: myShips
+          };
+          client.sendStreamMessage(JSON.stringify(boardState)).catch(err => {
+            console.warn("Error sending board state to audience:", err);
+          });
+        }
+      }
+
+      function handleAudienceStreamMessage(uid, msgData) {
+        const decoder = new TextDecoder();
+        const msgStr = decoder.decode(msgData);
+
+        try {
+          const msg = JSON.parse(msgStr);
+          
+          if (msg.type === "board-state") {
+            // Update the appropriate board based on player info
+            if (msg.isPlayerA) {
+              myBoardState = msg.board;
+              myShips = msg.ships;
+              renderMyBoard();
+            } else {
+              enemyBoardState = msg.board;
+              renderEnemyBoard();
+            }
+          }
+        } catch (e) {
+          console.error("Error handling audience message:", e);
+        }
+      }
+
+    </script>
+  </body>
+</html>
