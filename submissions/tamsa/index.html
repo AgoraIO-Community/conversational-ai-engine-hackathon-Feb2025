@@ -1350,13 +1350,12 @@
                     console.log("Valid coordinate:", letter + number);
                     attackCell(letterNum, parseInt(number) - 1); // Subtract 1 since board is 0-indexed
                     showNotification(`${isPlayerA ? "Player A" : "Player B"} attacked [${letter}, ${number}]`);
+                } else {
+                  console.log("Invalid coordinate:", messageDataJson.text);
                 }
               } else {
-                console.log("Invalid coordinate:", messageDataJson.text);
+                updateMessageLog(`${isPlayerA ? "Agent A" : "Agent B"}: ${messageDataJson.text}`);
               }
-              
-              updateMessageLog(`${isPlayerA ? "Agent A" : "Agent B"}: ${messageDataJson.text}`);
-              
             } else {
               //this is agent transcript
               console.log("Player message:", messageDataJson.text);
