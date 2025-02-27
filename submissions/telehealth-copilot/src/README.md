@@ -1,10 +1,6 @@
 # Agora ConvoAI Demo - Telehealth Platform
 
-Telehealth platform that enables secure video consultations between doctors and patients, powered by Agora's Real-Time Communication SDK and Conversational AI
-
-Live Demo
-
-https://agora-convo-ai-teleheath-demo.vercel.app/
+A modern telehealth platform that enables secure video consultations between doctors and patients, powered by Agora's Real-Time Communication SDK and AI capabilities.
 
 ## Features
 
@@ -22,7 +18,7 @@ https://agora-convo-ai-teleheath-demo.vercel.app/
 
 - **Frontend**: Next.js 14, React, TailwindCSS
 - **Video SDK**: Agora RTC
-- **AI Integration**: Conversational AI (OpenAI GPT-4o)
+- **AI Integration**: GPT-4 for medical analysis
 - **Voice**: Azure Text-to-Speech
 - **Charts**: Chart.js for diagnosis visualization
 
@@ -38,19 +34,19 @@ https://agora-convo-ai-teleheath-demo.vercel.app/
 3. Set up environment variables in `.env.local`:
 
    ```env
+   # Client-side variables (public)
    NEXT_PUBLIC_AGORA_APP_ID=your_agora_app_id
-   NEXT_PUBLIC_AGORA_CUSTOMER_ID=your_agora_customer_id
-   NEXT_PUBLIC_AGORA_CUSTOMER_SECRET=your_agora_customer_secret
-   NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key
-   NEXT_PUBLIC_AZURE_TTS_KEY=your_azure_tts_key
-   NEXT_PUBLIC_AZURE_TTS_VOICE=your_preferred_voice
-   NEXT_PUBLIC_AI_ASSISTANT_UID=your_ai_assistant_uid
-   NEXT_PUBLIC_ASR_LANGUAGE=your_default_language
-   NEXT_PUBLIC_LLM_URL=your_llm_endpoint
-   ```
+   NEXT_PUBLIC_AI_ASSISTANT_UID=10000
+   NEXT_PUBLIC_ASR_LANGUAGE=en-US
+   NEXT_PUBLIC_AZURE_TTS_VOICE=en-US-EmmaMultilingualNeural
 
-   Note: For better results use custom LLM optimized to generate JSON responses:
-   `http://ec2-18-236-128-162.us-west-2.compute.amazonaws.com:8000`
+   # Server-side variables (private)
+   AGORA_CUSTOMER_ID=your_agora_customer_id
+   AGORA_CUSTOMER_SECRET=your_agora_customer_secret
+   OPENAI_API_KEY=your_openai_api_key
+   AZURE_TTS_KEY=your_azure_tts_key
+   LLM_URL=http://ec2-18-236-128-162.us-west-2.compute.amazonaws.com:8000 # This is the URL of the LLM server optimized to work with JSON responses
+   ```
 
 4. Run the development server:
 
@@ -75,3 +71,20 @@ https://agora-convo-ai-teleheath-demo.vercel.app/
 1. Use the link provided by your doctor
 2. Grant camera and microphone permissions
 3. Join the consultation
+
+## Security
+
+- All video communications are encrypted
+- Unique session IDs for each consultation
+- No data persistence - sessions are temporary
+- Secure token-based authentication
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- Powered by [Agora.io](https://www.agora.io/)
+- AI capabilities by OpenAI's GPT-4
+- Voice synthesis by Azure Text-to-Speech
