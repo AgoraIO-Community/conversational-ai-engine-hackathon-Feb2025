@@ -1,14 +1,14 @@
 "use client";
 
 import dynamic from "next/dynamic";
-
+import React, { Suspense } from "react";
 import AuthInitializer from "@/components/authInitializer";
 import { useAppSelector, EMobileActiveTab, useIsCompactLayout } from "@/common";
 import Header from "@/components/Layout/Header";
 import Action from "@/components/Layout/Action";
 import { cn } from "@/lib/utils";
 import Avatar from "@/components/Agent/AvatarTrulience";
-import React from "react";
+
 import { IRtcUser, IUserTracks } from "@/manager";
 import { IMicrophoneAudioTrack } from "agora-rtc-sdk-ng";
 
@@ -60,7 +60,9 @@ export default function Home() {
     <AuthInitializer>
       <div className="relative mx-auto flex flex-1 min-h-screen flex-col md:h-screen">
         <Header className="h-[60px]" />
+        <Suspense fallback={<div>Loading Action...</div>}>
         <Action className="h-[48px]" />
+        </Suspense>
         <div className={cn(
           "mx-2 mb-2 flex h-full max-h-[calc(100vh-108px-24px)] flex-col md:flex-row md:gap-2 flex-1",
           {

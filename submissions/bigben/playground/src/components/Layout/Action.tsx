@@ -3,10 +3,10 @@
 import * as React from "react";
 import { useSearchParams } from "next/navigation"; // For reading query params
 
-// Correct imports for these two actions:
+// Redux actions
 import { setAgentConnected, setMobileActiveTab } from "@/store/reducers/global";
 
-// The rest from "@/common" as appropriate
+// Other local imports
 import {
   useAppDispatch,
   useAppSelector,
@@ -19,10 +19,21 @@ import {
 import { LoadingButton } from "@/components/Button/LoadingButton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { rtcManager } from "@/manager";
-import { rtmManager } from "@/manager";
 import { toast } from "sonner";
 
+// --------------------------------------------------------------------
+// Conditional import for rtcManager & rtmManager (only in the browser)
+// --------------------------------------------------------------------
+let lazyRtcManager: any = null;
+let lazyRtmManager: any = null;
+
+if (typeof window !== "undefined") {
+  const managerModule = require("@/manager");
+  lazyRtcManager = managerModule.rtcManager;  // from RtcManager.ts
+  lazyRtmManager = managerModule.rtmManager;  // if you have an rtmManager there
+}
+
+// Optional: track interval ID in a global ref
 let intervalId: NodeJS.Timeout | null = null;
 
 export default function Action(props: { className?: string }) {
@@ -78,28 +89,34 @@ export default function Action(props: { className?: string }) {
     if (loading) return;
     setLoading(true);
 
+    // Safely access the managers (they will be null on server)
+    if (!lazyRtcManager || !lazyRtmManager) {
+      toast.error("RTC/RTM managers are not loaded in a browser environment.");
+      setLoading(false);
+      return;
+    }
+
     if (agentConnected) {
       // If already connected, disconnect
       dispatch(setAgentConnected(false));
-      await rtcManager.leave();
+      await lazyRtcManager.leave();
     } else {
       // Connect with the user-entered (or query-param) values
-
-      rtmManager.init({
+      lazyRtmManager.init({
         appId: localAppId,
         token: localToken,
         channel: localChannel,
         userId: parseInt(localUserId, 10),
-      }
-    );
+      });
+
       try {
-        await rtcManager.join2({
+        await lazyRtcManager.join2({
           appId: localAppId,
           token: localToken,
           channel: localChannel,
           userId: parseInt(localUserId, 10),
         });
-        await rtcManager.publish();
+        await lazyRtcManager.publish();
         dispatch(setAgentConnected(true));
       } catch (err) {
         toast.error("Failed to join channel");
@@ -141,12 +158,13 @@ export default function Action(props: { className?: string }) {
       >
         {/* -- Description Part (hidden on small screens) */}
         <div className="hidden md:block">
-          <span className="text-sm font-bold"></span>
+          <span className="text-sm font-bold" />
           <span className="ml-0 whitespace-nowrap text-xs text-muted-foreground">
-Hackathon by BigBen
+            Hackathon by BigBen
           </span>
         </div>
 
+        {/* -- Mobile Tabs (shown on small screens) */}
         <Tabs
           defaultValue={mobileActiveTab}
           className="w-[400px] md:hidden"
