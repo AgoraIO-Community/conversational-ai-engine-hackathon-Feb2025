@@ -376,101 +376,19 @@ const useAgoraClient = (
 
       setIsJoiningAI(true);
       try {
-        const credentials = btoa(
-          `${agoraConfig.customerId}:${agoraConfig.customerSecret}`
-        );
-
-        const response = await fetch(
-          `https://api.agora.io/api/conversational-ai-agent/v2/projects/${agoraConfig.appId}/join`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Basic ${credentials}`,
-            },
-            body: JSON.stringify({
-              name: `${channelName}-${Date.now()}`,
-              properties: {
-                channel: channelName,
-                agent_rtc_uid: agoraConfig.aiAssistantUid,
-                enable_string_uid: false,
-                idle_timeout: 60,
-                remote_rtc_uids: [patientUid.toString()],
-                advanced_features: {
-                  enable_bhvs: false,
-                  enable_aivad: false,
-                },
-                asr: {
-                  language: selectedLanguage || agoraConfig.asrLanguage,
-                },
-                vad: {
-                  silence_duration_ms: 480,
-                },
-                llm: {
-                  // url: "https://api.openai.com/v1/chat/completions",
-                  url: `${agoraConfig.llmUrl}/chat/completions`,
-                  api_key: agoraConfig.openAiKey,
-                  system_messages: [
-                    {
-                      role: "system",
-                      content: `You always respond in a valid JSON format.
-                      You are a medical diagnosis assistant, you will listen a patient talking with its doctor describing its symptoms, you will provide potential conditions that the patient might have, keep everything in a medical context.  Provide exactly one valid JSON object with 3 keys This JSON must strictly adhere to RFC 8259, which requires every string to be enclosed in matching double quotes, and all punctuation (commas, colons, brackets, etc.) to be accurate.
-                      The JSON object must have exactly these keys:
-                      1.	"possible_conditions": an array of up to four objects. Each object must include:
-                      	•	"condition": a string naming the condition
-                      	•	"percentage": a number between 0 and 100 indicating the likelihood
-                        - The percentage sum of all conditions must be 100
-                      2. "summary": Short sentence summarizing patient symptoms
-                      2.	"follow_up_question": a single string with a question for further patient information
-
-                      No extra keys or text are permitted.
-
-                      Responses should be in this language: ${
-                        selectedLanguage || agoraConfig.asrLanguage
-                      }
-
-                      Example structure:
-                      {
-                        "possible_conditions": [{
-                        "condition": "Migraine",
-                        "percentage": 70
-                      },
-                      {
-                        "condition": "Cold",
-                        "percentage": 30
-                      }
-                      ],
-                      "summary": "Patient has a headache and runny nose",
-                      "follow_up_question": "Do you experience a sore throat?"
-                      }
-
-                      You must always respond in valid JSON format only, with no surrounding text or code fences.
-                      Do not format your output as Markdown, code blocks, or anything else. Never end "summary" or "follow-up" values question with a period`,
-                    },
-                  ],
-                  greeting_message: "",
-                  failure_message: "error",
-                  max_history: 100,
-                  params: {
-                    model: "gpt-4o",
-                    max_completion_tokens: 2048,
-                    temperature: 0.0,
-                  },
-                },
-                tts: {
-                  vendor: "microsoft",
-                  params: {
-                    key: agoraConfig.azureTtsKey,
-                    region: "eastus",
-                    voice_name: selectedVoice || agoraConfig.azureTtsVoice,
-                    rate: 1,
-                    volume: 70,
-                  },
-                },
-              },
-            }),
-          }
-        );
+        const response = await fetch("/api/ai-assistant", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action: "join",
+            channelName,
+            patientUid,
+            selectedLanguage: selectedLanguage || agoraConfig.asrLanguage,
+            selectedVoice: selectedVoice || agoraConfig.azureTtsVoice,
+          }),
+        });
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -495,20 +413,16 @@ const useAgoraClient = (
 
       setIsJoiningAI(true);
       try {
-        const credentials = btoa(
-          `${agoraConfig.customerId}:${agoraConfig.customerSecret}`
-        );
-
-        const response = await fetch(
-          `https://api.agora.io/api/conversational-ai-agent/v2/projects/${agoraConfig.appId}/agents/${agentId}/leave`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Basic ${credentials}`,
-            },
-          }
-        );
+        const response = await fetch("/api/ai-assistant", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action: "leave",
+            agentId,
+          }),
+        });
 
         if (!response.ok) {
           const errorData = await response.json();
