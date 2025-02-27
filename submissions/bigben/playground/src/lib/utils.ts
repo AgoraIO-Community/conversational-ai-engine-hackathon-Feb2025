@@ -10,6 +10,9 @@ export function useIsMobileScreen(breakpoint?: string) {
   const [isMobileScreen, setIsMobileScreen] = React.useState(false);
 
   React.useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
     const mql = window.matchMedia(`(max-width: ${breakpoint ?? "768px"})`);
     setIsMobileScreen(mql.matches);
     const listener = () => setIsMobileScreen(mql.matches);
