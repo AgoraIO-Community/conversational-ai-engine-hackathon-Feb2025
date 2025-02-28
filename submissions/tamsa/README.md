@@ -13,6 +13,7 @@ This is a two-person Battleship game using the AgoraWebSDK for both RTC and sync
    ```
 
 2. Vanilla HTML/CSS/JS, run locally in any dev server
+3. Lambda functions used to join/stop agent in /doc
 
 ## Usage
 
@@ -26,17 +27,13 @@ This is a two-person Battleship game using the AgoraWebSDK for both RTC and sync
 - Or you can click to just manually perform it (no agent involvement).
 - You can try to say "Chose for me" to have it chose for you, doesn't always work.
 - Complete the game or press End to end the session for both users and remove the agents. 
-- Join As Audience button for viewers, who do not hear the agents.
+- Join As Audience button for viewers, board sync from players is broken but can hear the agents and players.
 
 ## Features
 
 - Agent for given player should only listen when it's their turn.
 - Press U on keyboard to open agent messages log.
 
-
-## Known Issues
-
-- Agents spam greeting message
 
 ## Demo
 
