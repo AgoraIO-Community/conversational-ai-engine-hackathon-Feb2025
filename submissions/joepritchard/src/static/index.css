@@ -1,0 +1,65 @@
+.banner {
+  padding: 0;
+  background-color: #52575c;
+  color: white;
+}
+
+.banner-text {
+  padding: 8px 20px;
+  margin: 0;
+}
+
+
+#join-form {
+  margin-top: 10px;
+}
+
+.tips {
+  font-size: 12px;
+  margin-bottom: 2px;
+  color: gray;
+}
+
+.join-info-text {
+  margin-bottom: 2px;
+}
+
+input {
+  width: 100%;
+  margin-bottom: 2px;
+}
+
+.player {
+  width: 480px;
+  height: 320px;
+}
+
+.player-name {
+  margin: 8px 0;
+}
+
+#success-alert, #success-alert-with-token {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .player {
+    width: 320px;
+    height: 240px;
+  }
+}
+
+#spotify-login-btn {
+  cursor: pointer;  /* Make it look clickable */
+  background: url('sign-in-spotify.jpg') no-repeat center center;  /* Background image */
+  background-size: cover;  /* Cover the entire button */
+  width: 500px;  /* Set button width */
+  height: 100px;  /* Set button height */
+  border: none;  /* Remove button borders */
+  display: inline-block;  /* Make it behave like a button */
+  transition: opacity 0.3s ease;  /* Smooth hover effect */
+}
+
+#spotify-login-btn:hover {
+  opacity: 0.8;  /* Slight transparency effect */
+}

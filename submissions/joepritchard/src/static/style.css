@@ -1,0 +1,38 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    text-align: center;
+    padding: 20px;
+}
+
+#chat-container {
+    width: 300px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px #ccc;
+}
+
+#chat-box {
+    height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 10px;
+    background: #f9f9f9;
+    margin-bottom: 10px;
+}
+
+#user-input {
+    width: 80%;
+    padding: 10px;
+}
+
+#send-btn {
+    padding: 10px;
+    cursor: pointer;
+}
+
+#spotify-player {
+    margin-top: 20px;
+}
