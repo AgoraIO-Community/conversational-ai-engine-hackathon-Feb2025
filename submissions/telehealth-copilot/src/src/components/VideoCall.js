@@ -9,7 +9,8 @@ const useAgoraClient = (
   isDoctor,
   aiAssistantEnabled,
   selectedLanguage,
-  selectedVoice
+  selectedVoice,
+  patientId
 ) => {
   const [localVideoTrack, setLocalVideoTrack] = useState(null);
   const [remoteVideoTrack, setRemoteVideoTrack] = useState(null);
@@ -188,13 +189,14 @@ const useAgoraClient = (
                 const messageDataJson = JSON.parse(messageData);
 
                 if (messageDataJson.user_id) return; // Ignore messages as it's not from the assistant (user transcript)
-                if (!messageDataJson?.is_final) return;
-                console.log(new TextDecoder().decode(data));
-                console.log(messageDataJson);
+                // if (!messageDataJson?.is_final) return;
+                // console.log(new TextDecoder().decode(data));
+                // console.log(messageDataJson);
                 // console.log(
                 //   "Decoded AI assistant message JSON:",
                 //   messageDataJson,
                 // );
+                if (messageDataJson.object != "assistant.transcription") return;
                 const jsonData = JSON.parse(messageDataJson.text);
 
                 console.log("Decoded AI assistant message JSON:", jsonData);
@@ -361,7 +363,14 @@ const useAgoraClient = (
       initializingRef.current = false;
       console.log("Cleanup completed");
     };
-  }, [channelName, isDoctor, isClient, selectedLanguage, selectedVoice]); // Only run when isClient becomes true
+  }, [
+    channelName,
+    isDoctor,
+    isClient,
+    selectedLanguage,
+    selectedVoice,
+    patientId,
+  ]); // Only run when isClient becomes true
 
   // Effect to handle AI Assistant
   useEffect(() => {
@@ -387,6 +396,7 @@ const useAgoraClient = (
             patientUid,
             selectedLanguage: selectedLanguage || agoraConfig.asrLanguage,
             selectedVoice: selectedVoice || agoraConfig.azureTtsVoice,
+            patientId: patientId,
           }),
         });
 
@@ -456,6 +466,7 @@ const useAgoraClient = (
     patientUid,
     selectedLanguage,
     selectedVoice,
+    patientId,
   ]);
 
   const toggleVideo = async () => {
@@ -544,6 +555,7 @@ const VideoCall = ({
   onAiToggle,
   selectedLanguage,
   selectedVoice,
+  patientId,
 }) => {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -572,7 +584,8 @@ const VideoCall = ({
     isDoctor,
     aiAssistantEnabled,
     selectedLanguage,
-    selectedVoice
+    selectedVoice,
+    patientId
   );
 
   // Effect to notify parent component of remote user presence
