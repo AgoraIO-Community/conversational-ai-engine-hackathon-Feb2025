@@ -51,6 +51,8 @@
         <li>Place your ships after starting or joining a game</li>
         <li>After the game starts, say "Fire COORDINATES" to perform a move (ex. "Fire B4"), or click a cell to attack</li>
         <li>Say "Attack for me" for a random attack</li>
+        <li>Make sure that your speaker/audio out is unmuted so that you can hear the agent!</li>
+        <li>Press 'U' to show the agent messages.</li>
       </ol>
     </div>
 
@@ -212,6 +214,7 @@
       // Agora variables
       let client = null;
       let agentClient = null;
+      let audienceSpecialClient = null;
       let currentChannelName = null;
       let currentAgentChannelName = null;
       let isPlayerA = false;
@@ -300,8 +303,15 @@
           startBtn.classList.add('opacity-50', 'cursor-not-allowed');
           endBtn.disabled = false;
           endBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          // Restore End button text for players
+          endBtn.textContent = "End";
           // Show game instructions
           document.getElementById('gameInstructions').classList.remove('hidden');
+          
+          // Show main video elements for players
+          document.querySelector("#localVideo").parentElement.classList.remove('hidden');
+          document.querySelector("#remoteVideo").parentElement.classList.remove('hidden');
+
           // Create and acquire media tracks first
           [localAudioTrack, localVideoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
           localAgentAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
@@ -310,13 +320,27 @@
           localVideoTrack.play("localVideo");
 
           currentChannelName = "battleship_" + Math.floor(Math.random() * 999999);
-          currentAgentChannelName = currentChannelName + "_agent";
+          currentAgentChannelName = currentChannelName + "_agenta";
           isPlayerA = true;
 
+          // First reset and show the boards
           resetBoards();
           boardsContainer.classList.remove("hidden");
           channelListDiv.classList.add("hidden");
-          //startShipPlacement();
+
+          // Wait for a frame to ensure DOM is updated
+          await new Promise(resolve => requestAnimationFrame(resolve));
+
+          // Now that boards exist and are visible, set their labels
+          const myBoardLabel = document.querySelector("#myBoard").parentElement.parentElement.querySelector("h2");
+          const enemyBoardLabel = document.querySelector("#enemyBoard").parentElement.parentElement.querySelector("h2");
+
+          if (myBoardLabel && enemyBoardLabel) {
+            myBoardLabel.textContent = "PlayerA's Board";
+            enemyBoardLabel.textContent = "PlayerB's Board";
+          } else {
+            console.error("Board labels not found in DOM");
+          }
 
           // Create client and set up event handlers
           client = AgoraRTC.createClient({ mode: "live", codec: "vp8", role: "host" });
@@ -366,7 +390,7 @@
           const data = await resp.json();
           // Channels with user_count=1
           const channels = data || [];
-          const oneUser = data.filter((ch) => ch.user_count === 1 && !ch.channel_name.endsWith('_agent'));
+          const oneUser = data.filter((ch) => ch.user_count === 1 && !/_agent.*$/.test(ch.channel_name) && ch.channel_name.startsWith('battleship'));
           return oneUser;
         } catch (err) {
           console.error("Error listing channels:", err);
@@ -394,7 +418,7 @@
           const data = await resp.json();
           // Channels with user_count=1
           const channels = data || [];
-          const oneUser = data.filter((ch) => ch.user_count === 2 && !ch.channel_name.endsWith('_agent'));
+          const oneUser = data.filter((ch) => ch.user_count === 2 && !/_agent.*$/.test(ch.channel_name) && ch.channel_name.startsWith('battleship'));
           return oneUser;
         } catch (err) {
           console.error("Error listing channels:", err);
@@ -449,8 +473,15 @@
           startBtn.classList.add('opacity-50', 'cursor-not-allowed');
           endBtn.disabled = false;
           endBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          // Restore End button text for players
+          endBtn.textContent = "End";
           // Show game instructions
           document.getElementById('gameInstructions').classList.remove('hidden');
+          
+          // Show main video elements for players
+          document.querySelector("#localVideo").parentElement.classList.remove('hidden');
+          document.querySelector("#remoteVideo").parentElement.classList.remove('hidden');
+
           // Create and acquire media tracks first
           [localAudioTrack, localVideoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
           localAgentAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
@@ -459,12 +490,28 @@
           localVideoTrack.play("localVideo");
 
           currentChannelName = chName;
-          currentAgentChannelName = currentChannelName + "_agent";
+          currentAgentChannelName = currentChannelName + "_agentb";
           isPlayerA = false;
 
+          // First reset and show the boards
           resetBoards();
           boardsContainer.classList.remove("hidden");
           channelListDiv.classList.add("hidden");
+
+          // Wait for a frame to ensure DOM is updated
+          await new Promise(resolve => requestAnimationFrame(resolve));
+
+          // Now that boards exist and are visible, set their labels
+          const myBoardLabel = document.querySelector("#myBoard").parentElement.parentElement.querySelector("h2");
+          const enemyBoardLabel = document.querySelector("#enemyBoard").parentElement.parentElement.querySelector("h2");
+
+          if (myBoardLabel && enemyBoardLabel) {
+            myBoardLabel.textContent = "PlayerA's Board";
+            enemyBoardLabel.textContent = "PlayerB's Board";
+          } else {
+            console.error("Board labels not found in DOM");
+          }
+          
           startShipPlacement();
 
           client = AgoraRTC.createClient({ mode: "live", codec: "vp8", role: "host" });
@@ -617,7 +664,7 @@
       }
 
       // Add this new function for popup notifications
-      function showNotification(msg, duration = 2000) {
+      function showNotification(msg, duration = 5000) {
         const notification = document.getElementById('notification');
         const notificationText = document.getElementById('notificationText');
         notificationText.textContent = msg;
@@ -1210,7 +1257,14 @@
       startBtn.onclick = () => startAsPlayerA();
       listChannelsBtn.onclick = () => showChannelList();
       joinAudienceBtn.onclick = () => showAudienceChannelList();
-      endBtn.onclick = () => endSession();
+      endBtn.onclick = () => {
+        // Check if user is an audience member
+        if (client && client.role === "audience") {
+          leaveAsAudience();
+        } else {
+          endSession();
+        }
+      };
 
       /*****************************************
        * * 9) Agent Stuff
@@ -1352,13 +1406,14 @@
                     showNotification(`${isPlayerA ? "Player A" : "Player B"} attacked [${letter}, ${number}]`);
                 } else {
                   console.log("Invalid coordinate:", messageDataJson.text);
+                  showNotification("Invalid coordinates! Try again.");
                 }
-              } else {
-                updateMessageLog(`${isPlayerA ? "Agent A" : "Agent B"}: ${messageDataJson.text}`);
-              }
-            } else {
+              } 
               //this is agent transcript
-              console.log("Player message:", messageDataJson.text);
+              updateMessageLog(`${isPlayerA ? "Agent A" : "Agent B"}: ${messageDataJson.text}`);
+            } else {
+              //this is user transcript
+              //console.log("Player message:", messageDataJson.text);
               updateMessageLog(`${isPlayerA ? "Player A" : "Player B"}: ${messageDataJson.text}`);
             }
 
@@ -1379,16 +1434,40 @@
           startBtn.classList.add('opacity-50', 'cursor-not-allowed');
           endBtn.disabled = false;
           endBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          // Change End button text to Leave for audience
+          endBtn.textContent = "Leave";
           // Hide game instructions for audience
           document.getElementById('gameInstructions').classList.add('hidden');
+          
+          // Hide main video elements for audience
+          document.querySelector("#localVideo").parentElement.classList.add('hidden');
+          document.querySelector("#remoteVideo").parentElement.classList.add('hidden');
 
           // Create and acquire media tracks for viewing only
           currentChannelName = chName;
+          const currentAgentAChannelName = currentChannelName + "_agenta";
+          const currentAgentBChannelName = currentChannelName + "_agentb";
+          
           isPlayerA = false;
 
+          // First reset and show the boards
           resetBoards();
           boardsContainer.classList.remove("hidden");
           channelListDiv.classList.add("hidden");
+
+          // Wait for a frame to ensure DOM is updated
+          await new Promise(resolve => requestAnimationFrame(resolve));
+
+          // Now that boards exist and are visible, set their labels
+          const myBoardLabel = document.querySelector("#myBoard").parentElement.parentElement.querySelector("h2");
+          const enemyBoardLabel = document.querySelector("#enemyBoard").parentElement.parentElement.querySelector("h2");
+
+          if (myBoardLabel && enemyBoardLabel) {
+            myBoardLabel.textContent = "PlayerA's Board";
+            enemyBoardLabel.textContent = "PlayerB's Board";
+          } else {
+            console.error("Board labels not found in DOM");
+          }
 
           // Create client as audience
           client = AgoraRTC.createClient({ mode: "live", codec: "vp8", role: "audience" });
@@ -1396,6 +1475,7 @@
           // Set up special handlers for audience mode
           setupAudienceMediaHandlers();
           client.on("stream-message", handleAudienceStreamMessage);
+          
           // Generate random 10 character alphanumeric string for audience ID
           const generateAudienceId = () => {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -1415,6 +1495,25 @@
           client.sendStreamMessage(JSON.stringify(msgObj)).catch((err) => {
             console.warn("Error sending audience joined message:", err);
           });
+
+          //join to agent channels here
+          agentClient = AgoraRTC.createClient({ mode: "live", codec: "vp8", role: "audience" });
+          agentClient.on("user-published", async (user, mediaType) => {
+            if (mediaType === "audio") {
+              await agentClient.subscribe(user, mediaType);
+              user.audioTrack.play();
+            }
+          });
+          await agentClient.join(AGORA_APP_ID, currentAgentAChannelName, null, audienceId);
+
+          audienceSpecialClient = AgoraRTC.createClient({ mode: "live", codec: "vp8", role: "audience" });
+          audienceSpecialClient.on("user-published", async (user, mediaType) => {
+            if (mediaType === "audio") {
+              await audienceSpecialClient.subscribe(user, mediaType);
+              user.audioTrack.play();
+            }
+          });
+          await audienceSpecialClient.join(AGORA_APP_ID, currentAgentBChannelName, null, audienceId);
 
           updateStatus("Joined as audience - waiting for game state...");
         } catch (err) {
@@ -1452,8 +1551,22 @@
 
       function createVideoContainer(parentContainer, playerId) {
         const videoDiv = document.createElement("div");
-        videoDiv.className = "remote-video w-48 h-36 bg-gray-800 rounded mt-4";
+        videoDiv.className = "remote-video bg-gray-800 rounded";
         videoDiv.id = `remote-video-${playerId}`;
+
+        // Style based on player
+        if (playerId === "PlayerA") {
+          videoDiv.style.width = "192px"; // w-48 equivalent
+          videoDiv.style.height = "144px"; // h-36 equivalent
+          videoDiv.style.position = "absolute";
+          videoDiv.style.left = "-208px"; // 192px width + 16px margin
+          videoDiv.style.top = "50%";
+          videoDiv.style.transform = "translateY(-50%)";
+          parentContainer.style.position = "relative"; // Enable absolute positioning within
+        } else {
+          videoDiv.className += " w-48 h-36 mt-4"; // Default styling for PlayerB
+        }
+
         parentContainer.appendChild(videoDiv);
         return videoDiv;
       }
@@ -1494,6 +1607,64 @@
         } catch (e) {
           console.error("Error handling audience message:", e);
         }
+      }
+
+      // Add this new function for audience members to leave
+      async function leaveAsAudience() {
+        if (client) {
+          try {
+            await client.leave();
+          } catch (err) {
+            console.warn("Error leaving channel:", err);
+          }
+        }
+
+        if (agentClient) {
+          try {
+            await agentClient.leave();
+          } catch (err) {
+            console.warn("Error leaving channel:", err);
+          }
+        }
+
+        if (audienceSpecialClient) {
+          try {
+            await audienceSpecialClient.leave();
+          } catch (err) {
+            console.warn("Error leaving channel:", err);
+          }
+        }
+        
+        // Re-enable buttons
+        listChannelsBtn.disabled = false;
+        listChannelsBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        startBtn.disabled = false;
+        startBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        joinAudienceBtn.disabled = false;
+        joinAudienceBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        endBtn.disabled = true;
+        endBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        
+        // Reset UI elements
+        boardsContainer.classList.add("hidden");
+        channelListDiv.classList.add("hidden");
+        
+        // Reset client and channel info
+        client = null;
+        agentClient = null;
+        audienceSpecialClient = null;
+        currentChannelName = null;
+        
+        // Restore button text and board labels for potential player mode
+        endBtn.textContent = "End";
+        document.querySelector("#myBoard").parentElement.parentElement.querySelector("h2").textContent = "Your Board";
+        document.querySelector("#enemyBoard").parentElement.parentElement.querySelector("h2").textContent = "Enemy Board";
+        
+        // Show video containers for potential player mode
+        document.querySelector("#localVideo").parentElement.classList.remove('hidden');
+        document.querySelector("#remoteVideo").parentElement.classList.remove('hidden');
+        
+        updateStatus("Idle...");
       }
 
     </script>
