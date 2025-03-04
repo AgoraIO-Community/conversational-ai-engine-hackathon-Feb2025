@@ -9,6 +9,7 @@ export async function POST(request) {
       selectedLanguage,
       selectedVoice,
       agentId,
+      patientId,
     } = await request.json();
 
     // Get credentials from environment variables (server-side)
@@ -28,13 +29,13 @@ export async function POST(request) {
       });
       return NextResponse.json(
         { error: "Missing Agora credentials" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     // btoa is not available in Node.js environment, use Buffer instead
     const credentials = Buffer.from(`${customerId}:${customerSecret}`).toString(
-      "base64"
+      "base64",
     );
     const baseUrl = `https://api.agora.io/api/conversational-ai-agent/v2/projects/${appId}`;
 
@@ -99,7 +100,7 @@ export async function POST(request) {
                   }
 
                   You must always respond in valid JSON format only, with no surrounding text or code fences.
-                  Do not format your output as Markdown, code blocks, or anything else. Never end "summary" or "follow-up" values question with a period`,
+                  Do not format your output as Markdown, code blocks, or anything else. Never end ‘summary’ or ‘follow-up’ question values with a period. These values should always remain unpunctuated.`,
                 },
               ],
               greeting_message: "",
@@ -109,6 +110,9 @@ export async function POST(request) {
                 model: "gpt-4",
                 max_completion_tokens: 2048,
                 temperature: 0.0,
+                metadata: {
+                  patient_id: `${patientId ?? ""}`,
+                },
               },
             },
             tts: {
@@ -136,7 +140,7 @@ export async function POST(request) {
       if (!agentId) {
         return NextResponse.json(
           { error: "Agent ID is required for leave action" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -152,7 +156,7 @@ export async function POST(request) {
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          errorData.message || "Failed to remove AI agent from call"
+          errorData.message || "Failed to remove AI agent from call",
         );
       }
 
@@ -164,7 +168,7 @@ export async function POST(request) {
     console.error("Error handling AI assistant operation:", error);
     return NextResponse.json(
       { error: "Failed to process request: " + error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

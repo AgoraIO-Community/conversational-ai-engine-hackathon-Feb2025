@@ -21,6 +21,7 @@ export default function ClientVideoCall({
   onAiToggle,
   selectedLanguage,
   selectedVoice,
+  patientId,
 }) {
   const [isMounted, setIsMounted] = useState(false);
 
@@ -54,6 +55,7 @@ export default function ClientVideoCall({
       onAiToggle={onAiToggle}
       selectedLanguage={selectedLanguage}
       selectedVoice={selectedVoice}
+      patientId={patientId}
     />
   );
 }
