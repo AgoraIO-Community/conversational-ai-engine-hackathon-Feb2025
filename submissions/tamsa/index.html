@@ -27,7 +27,7 @@
         id="listChannelsBtn"
         class="px-4 py-2 bg-green-600 rounded hover:bg-green-700 font-semibold"
       >
-        List Channels to Join
+        List Games to Join (PlayerB)
       </button>
       <button
         id="joinAudienceBtn"
@@ -49,7 +49,7 @@
       <h3 class="font-bold text-lg mb-2">Game Instructions:</h3>
       <ol class="list-decimal list-inside space-y-2">
         <li>Place your ships after starting or joining a game</li>
-        <li>After the game starts, say "Fire COORDINATES" to perform a move (ex. "Fire B4"), or click a cell to attack</li>
+        <li>After the game starts, say "Attack <COORDINATES>" to perform a move (ex. "Attack B4"), or click a cell to attack</li>
         <li>Say "Attack for me" for a random attack</li>
         <li>Make sure that your speaker/audio out is unmuted so that you can hear the agent!</li>
         <li>Press 'U' to show the agent messages.</li>
@@ -421,7 +421,7 @@
           const data = await resp.json();
           // Channels with user_count=1
           const channels = data || [];
-          const oneUser = data.filter((ch) => ch.user_count === 2 && !/_agent.*$/.test(ch.channel_name) && ch.channel_name.startsWith('battleship'));
+          const oneUser = data.filter((ch) => ch.user_count >= 2 && !/_agent.*$/.test(ch.channel_name) && ch.channel_name.startsWith('battleship'));
           return oneUser;
         } catch (err) {
           console.error("Error listing channels:", err);
@@ -682,7 +682,7 @@
       }
 
       // Update the attackCell function to check if both players are ready
-      function attackCell(row, col) {
+      function attackCell(row, col, letter, number) {
         if (!client) {
           showNotification("Not connected to game!");
           return;
@@ -774,9 +774,9 @@
         bothPlayersReady = true;
         //join respective agent
         if (isPlayerA) {
-            startAgent("AgentA", currentAgentChannelName, "AgentA", "PlayerA", "You are acting as a commentator for a game of Battleship. You are only to respond when you hear the word Fire followed by a letter and number, which are coordinates on the board. For example, I will say Fire B4 and you should then respond with Acknowledged firing on B4. The coordinates range from A through J and 1 through 10. You will also respond to *Choose for me* by responding with a letter A through J and a number 1 through 10. Do not respond to anything else.", "Welcome to Battleship Agora Player A! When it's your turn, Say Fire COORDINATES to attack, or say Choose for me to attack.");
+            startAgent("AgentA", currentAgentChannelName, "AgentA", "PlayerA", "You are acting as a commentator for a game of Battleship. You are only to respond when you hear the word Attack followed by a letter and number, which are coordinates on the board. For example, I will say Attack B4 and you should then respond with Acknowledged firing on B4. The coordinates range from A through J and 1 through 10. You will also respond to *Choose for me* by responding with a letter A through J and a number 1 through 10. Do not respond to anything else.", "Welcome to Battleship Agora Player A! When it's your turn, Say Attack COORDINATES to attack, or say Choose for me to attack.");
           } else {
-            startAgent("AgentB", currentAgentChannelName, "AgentB", "PlayerB", "You are acting as a commentator for a game of Battleship. You are only to respond when you hear the word Fire followed by a letter and number, which are coordinates on the board. For example, I will say Fire B4 and you should then respond with Acknowledged firing on B4. The coordinates range from A through J and 1 through 10. You will also respond to *Choose for me* by responding with a letter A through J and a number 1 through 10. Do not respond to anything else.", "Welcome to Battleship Agora Player B! When it's your turn, Say Fire COORDINATES to attack, or say Choose for me to attack.");
+            startAgent("AgentB", currentAgentChannelName, "AgentB", "PlayerB", "You are acting as a commentator for a game of Battleship. You are only to respond when you hear the word Attack followed by a letter and number, which are coordinates on the board. For example, I will say Attack B4 and you should then respond with Acknowledged firing on B4. The coordinates range from A through J and 1 through 10. You will also respond to *Choose for me* by responding with a letter A through J and a number 1 through 10. Do not respond to anything else.", "Welcome to Battleship Agora Player B! When it's your turn, Say Attack COORDINATES to attack, or say Choose for me to attack.");
           }
 
           // Set initial turn - Player A goes first
@@ -811,9 +811,9 @@
 
           //join respective agent
           if (isPlayerA) {
-            startAgent("AgentA", currentAgentChannelName, "AgentA", "PlayerA", "You are acting as a commentator for a game of Battleship. You are only to respond when you hear the word Fire followed by a letter and number, which are coordinates on the board. For example, I will say Fire B4 and you should then respond with Acknowledged firing on B4. The coordinates range from A through J and 1 through 10. You will also respond to *Choose for me* by responding with a letter A through J and a number 1 through 10. Do not respond to anything else.", "Welcome to Battleship Agora Player A! When it's your turn, Say Fire COORDINATES to attack, or say Choose for me to attack.");
+            startAgent("AgentA", currentAgentChannelName, "AgentA", "PlayerA", "You are acting as a commentator for a game of Battleship. You are only to respond when you hear the word Attack followed by a letter and number, which are coordinates on the board. For example, I will say Attack B4 and you should then respond with Acknowledged firing on B4. The coordinates range from A through J and 1 through 10. You will also respond to *Choose for me* by responding with a letter A through J and a number 1 through 10. Do not respond to anything else.", "Welcome to Battleship Agora Player A! When it's your turn, Say Attack COORDINATES to attack, or say Choose for me to attack.");
           } else {
-            startAgent("AgentB", currentAgentChannelName, "AgentB", "PlayerB", "You are acting as a commentator for a game of Battleship. You are only to respond when you hear the word Fire followed by a letter and number, which are coordinates on the board. For example, I will say Fire B4 and you should then respond with Acknowledged firing on B4. The coordinates range from A through J and 1 through 10. You will also respond to *Choose for me* by responding with a letter A through J and a number 1 through 10. Do not respond to anything else.", "Welcome to Battleship Agora Player B! When it's your turn, Say Fire COORDINATES to attack, or say Choose for me to attack.");
+            startAgent("AgentB", currentAgentChannelName, "AgentB", "PlayerB", "You are acting as a commentator for a game of Battleship. You are only to respond when you hear the word Attack followed by a letter and number, which are coordinates on the board. For example, I will say Attack B4 and you should then respond with Acknowledged firing on B4. The coordinates range from A through J and 1 through 10. You will also respond to *Choose for me* by responding with a letter A through J and a number 1 through 10. Do not respond to anything else.", "Welcome to Battleship Agora Player B! When it's your turn, Say Attack COORDINATES to attack, or say Choose for me to attack.");
           }
 
           // Set initial turn - Player A goes first
@@ -864,7 +864,10 @@
           localAgentAudioTrack.setVolume(100);
           updateVideoOutlines();
           updateStatus("Your turn!");
-          showNotification(`Enemy attacked [${msg.row}, ${msg.col}] => ${isHit ? "HIT!" : "MISS"}`);
+          // Convert row to letter (0->A, 1->B, etc.) and add 1 to column
+          const truRow = String.fromCharCode('A'.charCodeAt(0) + msg.row);
+          const truCol = msg.col + 1;
+          showNotification(`Enemy attacked [${truRow}, ${truCol}] => ${isHit ? "HIT!" : "MISS"}`);
           //update audience
           handleAudienceJoined();
         }
@@ -883,7 +886,9 @@
         isMyTurn = false; // After receiving attack result, it's opponent's turn
         localAgentAudioTrack.setVolume(0);
         updateVideoOutlines();
-        showNotification(`Your attack at [${msg.row}, ${msg.col}] => ${msg.isHit ? "HIT!" : "MISS"}`);
+        const truRow = String.fromCharCode('A'.charCodeAt(0) + msg.row);
+        const truCol = msg.col + 1;
+        showNotification(`Your attack at [${truRow}, ${truCol}] => ${msg.isHit ? "HIT!" : "MISS"}`);
         updateStatus("Waiting for opponent...");
       }
 
@@ -1433,15 +1438,14 @@
               console.log("Agent message:", messageDataJson.text);
               
               // Search for capital letter followed by number pattern
-              const match = messageDataJson.text.match(/([A-Z])(\d)(?!\d)/);
+              const match = messageDataJson.text.match(/([A-J])(1[0]|[1-9])/);
               if (match) {
                 const [_, letter, number] = match;
                 if (letter >= 'A' && letter <= 'J' && 
                     parseInt(number) >= 1 && parseInt(number) <= 10) {
                     const letterNum = letter.charCodeAt(0) - 'A'.charCodeAt(0); // Convert A->0, B->1, etc
                     console.log("Valid coordinate:", letter + number);
-                    attackCell(letterNum, parseInt(number) - 1); // Subtract 1 since board is 0-indexed
-                    showNotification(`${isPlayerA ? "Player A" : "Player B"} attacked [${letter}, ${number}]`);
+                    attackCell(letterNum, parseInt(number) - 1, letter, number); // Subtract 1 since board is 0-indexed
                 } else {
                   console.log("Invalid coordinate:", messageDataJson.text);
                   showNotification("Invalid coordinates! Try again.");
@@ -1559,7 +1563,7 @@
           const msgObj = { type: "audience-joined" };
           client.sendStreamMessage(JSON.stringify(msgObj)).catch((err) => {
           console.warn("Error sending audience joined message:", err);
-          });
+          }).then(() => {client.setClientRole("audience")});
         }
       }
 
