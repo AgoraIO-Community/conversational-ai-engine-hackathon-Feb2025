@@ -90,7 +90,7 @@
       <div id="boardsContainer" class="hidden flex-1 flex flex-col md:flex-row md:space-x-6 space-y-6 md:space-y-0 justify-center">
         <!-- Player's Board -->
         <div class="flex flex-col items-center">
-          <h2 class="font-bold text-lg mb-2">Your Board</h2>
+          <h2 id="boardA" class="font-bold text-lg mb-2">Your Board</h2>
           <div class="flex">
             <!-- Row headers (A-J) -->
             <div class="mt-8 mr-2 flex flex-col space-y-1">
@@ -125,7 +125,7 @@
         </div>
         <!-- Enemy Board -->
         <div class="flex flex-col items-center">
-          <h2 class="font-bold text-lg mb-2">Enemy Board</h2>
+          <h2 id="boardB"class="font-bold text-lg mb-2">Enemy Board</h2>
           <div class="flex">
             <!-- Row headers (A-J) -->
             <div class="mt-8 mr-2 flex flex-col space-y-1">
@@ -225,6 +225,7 @@
 
       // Add these variables after the board states
       let myShips = Array(10).fill(null).map(() => Array(10).fill(false));
+      let myShips2 = Array(10).fill(null).map(() => Array(10).fill(false));
       let isMyTurn = false; // Track whose turn it is
       let isPlacingShips = false; // Track if we're in ship placement phase
       let shipPlacementStarted = false; //keep this false until playerA starts ship placement
@@ -301,6 +302,8 @@
           listChannelsBtn.classList.add('opacity-50', 'cursor-not-allowed');
           startBtn.disabled = true;
           startBtn.classList.add('opacity-50', 'cursor-not-allowed');
+          joinAudienceBtn.disabled = true;
+          joinAudienceBtn.classList.add('opacity-50', 'cursor-not-allowed');
           endBtn.disabled = false;
           endBtn.classList.remove('opacity-50', 'cursor-not-allowed');
           // Restore End button text for players
@@ -471,6 +474,8 @@
           listChannelsBtn.classList.add('opacity-50', 'cursor-not-allowed');
           startBtn.disabled = true;
           startBtn.classList.add('opacity-50', 'cursor-not-allowed');
+          joinAudienceBtn.disabled = true;
+          joinAudienceBtn.classList.add('opacity-50', 'cursor-not-allowed');
           endBtn.disabled = false;
           endBtn.classList.remove('opacity-50', 'cursor-not-allowed');
           // Restore End button text for players
@@ -591,6 +596,8 @@
         // Re-enable List Channels button
         listChannelsBtn.disabled = false;
         listChannelsBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        joinAudienceBtn.disabled = false;
+        joinAudienceBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         startBtn.disabled = false;
         startBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         endBtn.disabled = true;
@@ -744,6 +751,8 @@
             case "ready":
               handlePlayerReady();
               break;
+            case "board-state":
+              break;
             case "audience-joined":
               handleAudienceJoined();
               break;
@@ -856,6 +865,8 @@
           updateVideoOutlines();
           updateStatus("Your turn!");
           showNotification(`Enemy attacked [${msg.row}, ${msg.col}] => ${isHit ? "HIT!" : "MISS"}`);
+          //update audience
+          handleAudienceJoined();
         }
       }
 
@@ -901,6 +912,25 @@
           for (let c = 0; c < 10; c++) {
             const val = myBoardState[r][c];
             const hasShip = myShips[r][c];
+            cells[idx].className =
+              "h-7 w-7 border border-gray-600 " +
+              (val === 0
+                ? (hasShip ? "bg-yellow-500" : "bg-gray-700")
+                : val === 1
+                ? "bg-red-500"
+                : "bg-blue-500");
+            idx++;
+          }
+        }
+      }
+
+      function renderMyBoard2() {
+        const cells = enemyBoardEl.querySelectorAll("div");
+        let idx = 0;
+        for (let r = 0; r < 10; r++) {
+          for (let c = 0; c < 10; c++) {
+            const val = enemyBoardState[r][c];
+            const hasShip = myShips2[r][c];
             cells[idx].className =
               "h-7 w-7 border border-gray-600 " +
               (val === 0
@@ -1019,6 +1049,7 @@
         renderMyBoard();
         updateShipInfo(); // Update ship info display
         updateStatus(getPlacementStatus());
+        handleAudienceJoined();
 
         if (shipsToPlace === 0) {
           finishPlacement();
@@ -1259,7 +1290,7 @@
       joinAudienceBtn.onclick = () => showAudienceChannelList();
       endBtn.onclick = () => {
         // Check if user is an audience member
-        if (client && client.role === "audience") {
+        if (client && audienceSpecialClient) {
           leaveAsAudience();
         } else {
           endSession();
@@ -1386,12 +1417,19 @@
             if (parseInt(messagePart) === parseInt(messageChunks))
               messagesMap.delete(messageId);
             else return;
-            // messageData example: {"is_final": false, "stream_id": 1000000016, "user_id": "1000000016", "turn_id": 1, "message_id": "20477583", "data_type": "transcribe", "text": "fire ", "text_ts": 1740669070630}
+            // messageData example: {"object": "assistant.transcription", "text": "Acknowledged firing on B6.", "start_ms": 1741209891808, "duration_ms": 0, "language": "", "quiet": false, "reasoning": false, "turn_id": 2, "turn_seq_id": 0, "turn_status": 1, "stream_id": 0, "user_id": "", "words": null, "message_id": "d9a0c6a5", "data_type": "transcribe"}
+            // messageData {"object": "message.interrupt", "turn_id": 1, "start_ms": 1741209887626, "data_type": "message", "message_id": "0d60e87e", "send_ts": 1741209887626}
+            // messageData {"object": "user.transcription", "text": "fire ", "final": false, "start_ms": 1741209887322, "duration_ms": 840, "language": "en-US", "turn_id": 2, "stream_id": 10016, "user_id": "10016", "words": null, "message_id": "ab8b990a", "data_type": "transcribe"}
+            // messageData {"object": "user.transcription", "text": "Fire B6 ", "final": false, "start_ms": 1741209887322, "duration_ms": 1960, "language": "en-US", "turn_id": 2, "stream_id": 10016, "user_id": "10016", "words": null, "message_id": "d6d42005", "data_type": "transcribe"}
+            // messageData {"object": "user.transcription", "text": "Firebird 6", "final": true, "start_ms": 1741209887322, "duration_ms": 1960, "language": "en-US", "turn_id": 2, "stream_id": 10016, "user_id": "10016", "words": null, "message_id": "548f409f", "data_type": "transcribe"}
+            // messageData {"object": "assistant.transcription", "text": "Acknowledged firing on B6.", "start_ms": 1741209891801, "duration_ms": 0, "language": "", "quiet": false, "reasoning": false, "turn_id": 2, "turn_seq_id": 0, "turn_status": 0, "stream_id": 0, "user_id": "", "words": null, "message_id": "fcd0b8e2", "data_type": "transcribe"}
+            // messageData {"object": "assistant.transcription", "text": "Acknowledged firing on B6.", "start_ms": 1741209891808, "duration_ms": 0, "language": "", "quiet": false, "reasoning": false, "turn_id": 2, "turn_seq_id": 0, "turn_status": 1, "stream_id": 0, "user_id": "", "words": null, "message_id": "d9a0c6a5", "data_type": "transcribe"}
+            // messageData {"object": "message.interrupt", "turn_id": 2, "start_ms": 1741209897852, "data_type": "message", "message_id": "2b0857d7", "send_ts": 1741209897852}
+            //console.log("messageData", messageData);
             const messageDataJson = JSON.parse(messageData);
-            if (!messageDataJson?.is_final) return;
-
-            if (messageDataJson.user_id === "") {
-              //this is user transcript
+            if (messageDataJson.object === "assistant.transcription") {
+              //this is agent transcript
+              if (!messageDataJson?.turn_status) return;
               console.log("Agent message:", messageDataJson.text);
               
               // Search for capital letter followed by number pattern
@@ -1413,7 +1451,8 @@
               updateMessageLog(`${isPlayerA ? "Agent A" : "Agent B"}: ${messageDataJson.text}`);
             } else {
               //this is user transcript
-              //console.log("Player message:", messageDataJson.text);
+              if (!messageDataJson?.final) return;
+              console.log("Player message:", messageDataJson.text);
               updateMessageLog(`${isPlayerA ? "Player A" : "Player B"}: ${messageDataJson.text}`);
             }
 
@@ -1458,19 +1497,8 @@
           // Wait for a frame to ensure DOM is updated
           await new Promise(resolve => requestAnimationFrame(resolve));
 
-          // Now that boards exist and are visible, set their labels
-          const myBoardLabel = document.querySelector("#myBoard").parentElement.parentElement.querySelector("h2");
-          const enemyBoardLabel = document.querySelector("#enemyBoard").parentElement.parentElement.querySelector("h2");
-
-          if (myBoardLabel && enemyBoardLabel) {
-            myBoardLabel.textContent = "PlayerA's Board";
-            enemyBoardLabel.textContent = "PlayerB's Board";
-          } else {
-            console.error("Board labels not found in DOM");
-          }
-
           // Create client as audience
-          client = AgoraRTC.createClient({ mode: "live", codec: "vp8", role: "audience" });
+          client = AgoraRTC.createClient({ mode: "live", codec: "vp8", role: "host" });
           
           // Set up special handlers for audience mode
           setupAudienceMediaHandlers();
@@ -1490,11 +1518,7 @@
 
           await client.join(AGORA_APP_ID, chName, null, audienceId);
           
-          // Send audience joined message
-          const msgObj = { type: "audience-joined" };
-          client.sendStreamMessage(JSON.stringify(msgObj)).catch((err) => {
-            console.warn("Error sending audience joined message:", err);
-          });
+
 
           //join to agent channels here
           agentClient = AgoraRTC.createClient({ mode: "live", codec: "vp8", role: "audience" });
@@ -1519,6 +1543,23 @@
         } catch (err) {
           console.error(err);
           updateStatus("Error joining as audience: " + err.message);
+        } finally {
+          // Now that boards exist and are visible, set their labels
+          const myBoardLabel = document.querySelector("#boardA");
+          const enemyBoardLabel = document.querySelector("#boardB");
+
+          if (myBoardLabel && enemyBoardLabel) {
+            myBoardLabel.textContent = "PlayerA's Board";
+            enemyBoardLabel.textContent = "PlayerB's Board";
+          } else {
+            console.error("Board labels not found in DOM");
+          }
+
+          // Send audience joined message
+          const msgObj = { type: "audience-joined" };
+          client.sendStreamMessage(JSON.stringify(msgObj)).catch((err) => {
+          console.warn("Error sending audience joined message:", err);
+          });
         }
       }
 
@@ -1564,7 +1605,13 @@
           videoDiv.style.transform = "translateY(-50%)";
           parentContainer.style.position = "relative"; // Enable absolute positioning within
         } else {
-          videoDiv.className += " w-48 h-36 mt-4"; // Default styling for PlayerB
+          videoDiv.style.width = "192px"; // w-48 equivalent
+          videoDiv.style.height = "144px"; // h-36 equivalent
+          videoDiv.style.position = "absolute";
+          videoDiv.style.right = "-208px"; // 192px width + 16px margin
+          videoDiv.style.top = "50%";
+          videoDiv.style.transform = "translateY(-50%)";
+          parentContainer.style.position = "relative"; // Enable absolute positioning within
         }
 
         parentContainer.appendChild(videoDiv);
@@ -1601,7 +1648,8 @@
               renderMyBoard();
             } else {
               enemyBoardState = msg.board;
-              renderEnemyBoard();
+              myShips2 = msg.ships;
+              renderMyBoard2();
             }
           }
         } catch (e) {
