@@ -889,6 +889,15 @@
         const truRow = String.fromCharCode('A'.charCodeAt(0) + msg.row);
         const truCol = msg.col + 1;
         showNotification(`Your attack at [${truRow}, ${truCol}] => ${msg.isHit ? "HIT!" : "MISS"}`);
+
+        const audienceMsg = {
+          type: "attack_audience",
+          row: msg.row,
+          col: msg.col,
+          isPlayerA: isPlayerA
+        };
+
+        client.sendStreamMessage(JSON.stringify(audienceMsg));
         updateStatus("Waiting for opponent...");
       }
 
@@ -1521,26 +1530,30 @@
           const audienceId = generateAudienceId();
 
           await client.join(AGORA_APP_ID, chName, null, audienceId);
-          
-
-
+        
           //join to agent channels here
           agentClient = AgoraRTC.createClient({ mode: "live", codec: "vp8", role: "audience" });
           agentClient.on("user-published", async (user, mediaType) => {
-            if (mediaType === "audio") {
-              await agentClient.subscribe(user, mediaType);
-              user.audioTrack.play();
+            if (user.uid === "AgentA") {
+              if (mediaType === "audio") {
+                await new Promise(resolve => setTimeout(resolve, 10000));
+                await agentClient.subscribe(user, mediaType);
+                user.audioTrack.play();
+              }
             }
           });
           await agentClient.join(AGORA_APP_ID, currentAgentAChannelName, null, audienceId);
 
           audienceSpecialClient = AgoraRTC.createClient({ mode: "live", codec: "vp8", role: "audience" });
           audienceSpecialClient.on("user-published", async (user, mediaType) => {
-            if (mediaType === "audio") {
-              await audienceSpecialClient.subscribe(user, mediaType);
-              user.audioTrack.play();
+            if (user.uid === "AgentB") {
+              if (mediaType === "audio") {
+                await audienceSpecialClient.subscribe(user, mediaType);
+                user.audioTrack.play();
+              }
             }
           });
+
           await audienceSpecialClient.join(AGORA_APP_ID, currentAgentBChannelName, null, audienceId);
 
           updateStatus("Joined as audience - waiting for game state...");
@@ -1642,18 +1655,38 @@
         const msgStr = decoder.decode(msgData);
 
         try {
-          const msg = JSON.parse(msgStr);
-          
-          if (msg.type === "board-state") {
-            // Update the appropriate board based on player info
-            if (msg.isPlayerA) {
-              myBoardState = msg.board;
-              myShips = msg.ships;
-              renderMyBoard();
-            } else {
-              enemyBoardState = msg.board;
-              myShips2 = msg.ships;
-              renderMyBoard2();
+          if (msgStr === "end_session") {
+            leaveAsAudience();
+          } else {
+            const msg = JSON.parse(msgStr);
+            if (msg.type === "board-state") {
+              // Update the appropriate board based on player info
+              if (msg.isPlayerA) {
+                myBoardState = msg.board;
+                myShips = msg.ships;
+                renderMyBoard();
+                //shownotehere
+                const truRow = String.fromCharCode('A'.charCodeAt(0) + msg.row);
+                const truCol = msg.col + 1;
+                if (msg.row) {
+                  showNotification(`Your attack at [${truRow}, ${truCol}] => ${msg.isHit ? "HIT!" : "MISS"}`);
+                }
+              } else {
+                enemyBoardState = msg.board;
+                myShips2 = msg.ships;
+                renderMyBoard2();
+                //shownotehere
+                const truRow = String.fromCharCode('A'.charCodeAt(0) + msg.row);
+                const truCol = msg.col + 1;
+                if (msg.row) {
+                 showNotification(`Your attack at [${truRow}, ${truCol}] => ${msg.isHit ? "HIT!" : "MISS"}`);
+                }
+              }
+            } else if (msg.type === "attack_audience") {
+              //attack audience handling
+              const truRow = String.fromCharCode('A'.charCodeAt(0) + msg.row);
+              const truCol = msg.col + 1;
+              showNotification(`${msg.isPlayerA ? "Player A" : "Player B"} attack at [${truRow}, ${truCol}] => ${msg.isHit ? "HIT!" : "MISS"}`);
             }
           }
         } catch (e) {
