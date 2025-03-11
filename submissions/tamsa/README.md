@@ -23,7 +23,7 @@ This is a two-person Battleship game using the AgoraWebSDK for both RTC and sync
 - Second player choses an active channel.
 - Now both players can place their ships by clicking on their board.
 - Once all are placed, respective agents join.
-- PlayerA goes first (green outline), you can say "Fire <COORDINATES>" to have the agent perform the move (ex. "Fire B4").
+- PlayerA goes first (green outline), you can say "Attack <COORDINATES>" to have the agent perform the move (ex. "Attack B4").
 - Or you can click to just manually perform it (no agent involvement).
 - You can try to say "Chose for me" to have it chose for you, doesn't always work.
 - Complete the game or press End to end the session for both users and remove the agents. 
