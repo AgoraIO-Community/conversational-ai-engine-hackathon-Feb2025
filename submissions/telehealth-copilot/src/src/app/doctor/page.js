@@ -12,6 +12,7 @@ export default function DoctorPage() {
   const [hasPatient, setHasPatient] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState("en-US");
   const [showCall, setShowCall] = useState(false);
+  const [patientId, setPatientId] = useState("");
 
   const languages = [
     { value: "en-US", label: "English", voice: "en-US-EmmaMultilingualNeural" },
@@ -216,6 +217,22 @@ export default function DoctorPage() {
                         </select>
                       </div>
                     </div>
+
+                    {/* Patient ID Input (Optional) */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-400 mb-2">
+                        Patient ID (Optional)
+                      </label>
+                      <div className="max-w-xs">
+                        <input
+                          type="text"
+                          value={patientId}
+                          onChange={(e) => setPatientId(e.target.value)}
+                          placeholder="Enter patient ID"
+                          className="w-full px-4 py-2.5 rounded-lg bg-gray-700 text-white border border-gray-600 hover:border-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
+                        />
+                      </div>
+                    </div>
                   </>
                 ) : null}
 
@@ -357,6 +374,7 @@ export default function DoctorPage() {
                 selectedVoice={
                   languages.find((l) => l.value === selectedLanguage).voice
                 }
+                patientId={patientId}
               />
             )}
           </div>
