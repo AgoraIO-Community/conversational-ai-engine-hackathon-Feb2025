@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ConvoAI SA India Team</title>
+  <link rel="stylesheet" href="./src/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Mental Health Companion - Agora's SA India Team</h1>
+    
+    <div class="toggle-container">
+      <div id="connectionToggle" class="toggle-switch">
+      </div>
+      <div class="toggle-label" id="toggleLabel">Disconnected</div>
+    </div>
+    
+    <div class="ai-speaking-container">
+      <div class="ai-speaking-indicator" id="speakingIndicator">
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+      </div>
+    </div>
+    
+    <div class="status-container">
+      <div class="status-item">
+        <div class="status-indicator" id="connectionIndicator"></div>
+        <span class="status-label">Connection: <span id="connectionStatus">Disconnected</span></span>
+      </div>
+      <div class="status-item">
+        <div class="status-indicator" id="aiIndicator"></div>
+        <span class="status-label">AI Assistant: <span id="aiStatus">Inactive</span></span>
+      </div>
+    </div>
+  </div>
+  
+  <script src="./src/script.js" type="module"></script>
+</body>
+</html>
